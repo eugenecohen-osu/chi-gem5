@@ -73,7 +73,10 @@ memory = DualChannelDDR4_2400(size="3GiB")
 
 # Here we setup the processor. We use a simple processor.
 processor = SimpleProcessor(
-    cpu_type=CPUTypes.TIMING, isa=ISA.RISCV, num_cores=2
+    # temporarily modified num_cores to 1 instead of 2
+    cpu_type=CPUTypes.TIMING,
+    isa=ISA.RISCV,
+    num_cores=1,
 )
 
 # Here we setup the board. The RiscvBoard allows for Full-System RISCV
@@ -89,9 +92,13 @@ board = RiscvBoard(
 # Ubuntu 20.04. Once the system successfully boots it encounters an `m5_exit`
 # instruction which stops the simulation. When the simulation has ended you may
 # inspect `m5out/system.pc.com_1.device` to see the stdout.
-board.set_workload(
-    obtain_resource("riscv-ubuntu-24.04-boot", resource_version="1.0.0")
-)
+workload = obtain_resource("riscv-ubuntu-24.04-boot", resource_version="1.0.0")
+kernel_args = board.get_default_kernel_args()
+print("override init to /bin/bash")
+kernel_args.append("init=/bin/bash")
+print(f"kernel_args: {kernel_args}")
+workload.set_parameter("kernel_args", kernel_args)
+board.set_workload(workload)
 
 
 def exit_event_handler():
