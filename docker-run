@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# requires docker, sudo apt install docker.io
+
+set -e
+set -u
+
+docker build \
+    --file util/dockerfiles/ubuntu-24.04_all-dependencies/Dockerfile \
+    --tag gem5-dev \
+    .
+
+THISDIR=$(pwd -P)
+
+docker run \
+    --interactive \
+    --tty \
+    --user $(id -u):$(id -g) \
+    --network host \
+    --rm \
+    -v $THISDIR:$THISDIR \
+    --workdir $THISDIR \
+    gem5-dev \
+    $*
