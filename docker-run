@@ -17,8 +17,10 @@ docker run \
     --tty \
     --user $(id -u):$(id -g) \
     --network host \
-    --rm \
+    --env HOME=$HOME \
+    -v $HOME:$HOME \
     -v $THISDIR:$THISDIR \
     --workdir $THISDIR \
+    --rm \
     gem5-dev \
     $*
