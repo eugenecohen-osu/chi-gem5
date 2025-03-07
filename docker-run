@@ -5,10 +5,12 @@
 set -e
 set -u
 
-docker build \
-    --file util/dockerfiles/ubuntu-24.04_all-dependencies/Dockerfile \
-    --tag gem5-dev \
-    .
+if [ -z "$(docker images -q gem5-dev 2> /dev/null)" ]; then
+    docker build \
+        --file util/dockerfiles/ubuntu-24.04_all-dependencies/Dockerfile \
+        --tag gem5-dev \
+        .
+fi
 
 THISDIR=$(pwd -P)
 
