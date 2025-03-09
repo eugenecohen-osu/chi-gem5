@@ -48,3 +48,5 @@ run_thrash_mesh RiscvTimingSimpleCPU 1 16 out_1c_stride16
 run_thrash_mesh RiscvTimingSimpleCPU 2 16 out_2c_stride16
 run_thrash_mesh RiscvTimingSimpleCPU 4 16 out_4c_stride16
 run_thrash_mesh RiscvTimingSimpleCPU 8 16 out_8c_stride16
+
+./scrape-stats.py --out png
