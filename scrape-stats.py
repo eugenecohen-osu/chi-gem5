@@ -47,7 +47,8 @@ plot_list = [
         'subplots' : [
             {
                 'title': 'CPU0',
-                're': r'system.cpu[0]*.cpi\s+(\S+)'
+                're': r'system.cpu[0]*.cpi\s+(\S+)',
+                'y-label': 'CPI'
             }
         ]
     },
@@ -57,7 +58,8 @@ plot_list = [
         'subplots' : [
             {
                 'title': 'CPU0',
-                're': r'system.cpu[0]*.numCycles\s+(\S+)'
+                're': r'system.cpu[0]*.numCycles\s+(\S+)',
+                'y-label': 'cycles'
             }
         ]
     },
@@ -67,7 +69,8 @@ plot_list = [
         'subplots' : [
             {
                 'title': 'CPU0',
-                're': r'system.cpu[0]*.l1d.inTransLatHist.Load::total\s+(\S+)'
+                're': r'system.cpu[0]*.l1d.inTransLatHist.Load::total\s+(\S+)',
+                'y-label': 'count'
             }
         ]
     },
@@ -75,23 +78,17 @@ plot_list = [
         'title': 'CPU0 L1 D-Cache Snoop Traffic',
         'filename': 'l1-traffic.png',
         'subplots' : [
-            # {
-            #     'title': 'Load',
-            #     're': r'system\.cpu[0]*\.l1d\.inTransLatHist\.Load::total\s+(\S+)'
-            # },
-            # {
-            #     'title': 'Store',
-            #     're': r'system\.cpu[0]*\.l1d\.inTransLatHist\.Store::total\s+(\S+)'
-            # },
             {
                 'title': 'SnpCleanInvalid',
                 'y-scale': 'log',
-                're': r'system\.cpu[0]*\.l1d\.inTransLatHist\.SnpCleanInvalid::total\s+(\S+)'
+                're': r'system\.cpu[0]*\.l1d\.inTransLatHist\.SnpCleanInvalid::total\s+(\S+)',
+                'y-label': 'count'
             },
             {
                 'title': 'SnpShared',
                 'y-scale': 'log',
-                're': r'system\.cpu[0]*\.l1d\.inTransLatHist\.SnpShared::total\s+(\S+)'
+                're': r'system\.cpu[0]*\.l1d\.inTransLatHist\.SnpShared::total\s+(\S+)',
+                'y-label': 'count'
             }
         ]
     },
@@ -102,12 +99,14 @@ plot_list = [
             {
                 'title': 'SnpCleanInvalid',
                 'y-scale': 'log',
-                're': r'system\.cpu[0]*\.l2\.inTransLatHist\.SnpCleanInvalid::total\s+(\S+)'
+                're': r'system\.cpu[0]*\.l2\.inTransLatHist\.SnpCleanInvalid::total\s+(\S+)',
+                'y-label': 'count'
             },
             {
                 'title': 'SnpSharedFwd',
                 'y-scale': 'log',
-                're': r'system\.cpu[0]*\.l2\.inTransLatHist\.SnpSharedFwd::total\s+(\S+)'
+                're': r'system\.cpu[0]*\.l2\.inTransLatHist\.SnpSharedFwd::total\s+(\S+)',
+                'y-label': 'count'
             }
         ]
     },
@@ -117,11 +116,13 @@ plot_list = [
         'subplots' : [
             {
                 'title': 'HNF0',
-                're': r'system\.ruby\.hnf0\.cntrl\.inTransLatHist\.ReadShared::samples\s+(\S+)'
+                're': r'system\.ruby\.hnf0\.cntrl\.inTransLatHist\.ReadShared::samples\s+(\S+)',
+                'y-label': 'count'
             },
             {
                 'title': 'HNF1',
-                're': r'system\.ruby\.hnf1\.cntrl\.inTransLatHist\.ReadShared::samples\s+(\S+)'
+                're': r'system\.ruby\.hnf1\.cntrl\.inTransLatHist\.ReadShared::samples\s+(\S+)',
+                'y-label': 'count'
             }
         ]
     },
@@ -131,11 +132,13 @@ plot_list = [
         'subplots' : [
             {
                 'title': 'HNF0',
-                're': r'system\.ruby\.hnf0\.cntrl\.inTransLatHist\.ReadUnique_PoC::samples\s+(\S+)'
+                're': r'system\.ruby\.hnf0\.cntrl\.inTransLatHist\.ReadUnique_PoC::samples\s+(\S+)',
+                'y-label': 'count'
             },
             {
                 'title': 'HNF1',
-                're': r'system\.ruby\.hnf1\.cntrl\.inTransLatHist\.ReadUnique_PoC::samples\s+(\S+)'
+                're': r'system\.ruby\.hnf1\.cntrl\.inTransLatHist\.ReadUnique_PoC::samples\s+(\S+)',
+                'y-label': 'count'
             }
         ]
     },
@@ -145,11 +148,13 @@ plot_list = [
         'subplots' : [
             {
                 'title': 'HNF0',
-                're': r'system\.ruby\.hnf0\.cntrl\.inTransLatHist\.CleanUnique::samples\s+(\S+)'
+                're': r'system\.ruby\.hnf0\.cntrl\.inTransLatHist\.CleanUnique::samples\s+(\S+)',
+                'y-label': 'count'
             },
             {
                 'title': 'HNF1',
-                're': r'system\.ruby\.hnf1\.cntrl\.inTransLatHist\.CleanUnique::samples\s+(\S+)'
+                're': r'system\.ruby\.hnf1\.cntrl\.inTransLatHist\.CleanUnique::samples\s+(\S+)',
+                'y-label': 'count'
             }
         ]
     }
@@ -224,6 +229,8 @@ def make_plot(plot, outdir):
             ax.set_yscale(sp['y-scale'])
         if 'x-scale' in sp:
             ax.set_xscale(sp['x-scale'])
+        if 'y-label' in sp:
+            plt.ylabel(sp['y-label'])
         plt.setp(ax.get_xticklabels(), rotation=30, horizontalalignment='right')
         col_idx=col_idx+1
     
