@@ -51,6 +51,16 @@ plot_list = [
             }
         ]
     },
+     {
+        'title': 'CPU Cycles',
+        'filename': 'cycles.png',
+        'subplots' : [
+            {
+                'title': 'CPU0',
+                're': r'system.cpu[0]*.numCycles\s+(\S+)'
+            }
+        ]
+    },
     {
         'title': 'L1 D-Cache Loads',
         'filename': 'l1-loads.png',
@@ -62,7 +72,7 @@ plot_list = [
         ]
     },
     {
-        'title': 'CPU0 L1 Snoop Traffic',
+        'title': 'CPU0 L1 D-Cache Snoop Traffic',
         'filename': 'l1-traffic.png',
         'subplots' : [
             # {
@@ -82,6 +92,22 @@ plot_list = [
                 'title': 'SnpShared',
                 'y-scale': 'log',
                 're': r'system\.cpu[0]*\.l1d\.inTransLatHist\.SnpShared::total\s+(\S+)'
+            }
+        ]
+    },
+    {
+        'title': 'CPU0 L2 Snoop Traffic',
+        'filename': 'l2-traffic.png',
+        'subplots' : [
+            {
+                'title': 'SnpCleanInvalid',
+                'y-scale': 'log',
+                're': r'system\.cpu[0]*\.l2\.inTransLatHist\.SnpCleanInvalid::total\s+(\S+)'
+            },
+            {
+                'title': 'SnpSharedFwd',
+                'y-scale': 'log',
+                're': r'system\.cpu[0]*\.l2\.inTransLatHist\.SnpSharedFwd::total\s+(\S+)'
             }
         ]
     },
@@ -131,29 +157,6 @@ plot_list = [
 
 def gridpos(grid_rows, grid_cols, col_idx):
     return (100 * grid_rows) + (10 * grid_cols) + col_idx
-
-# def plot_stats(data, out_filename):
-    
-#     #names = ['group_a', 'group_b', 'group_c']
-#     #values = [1, 10, 100]
-
-#     grid_rows=1
-#     grid_cols=len(data)
-
-#     plt.figure(figsize=(9, 3))
-
-#     col_idx=1
-#     for ds in data:
-#         sp_pos = gridpos(grid_rows, grid_cols, col_idx)
-#         print(f'sp_pos is {sp_pos}')
-#         plt.subplot(sp_pos, title=ds['title'])
-#         plt.bar(ds['names'], ds['values'])
-        
-#         col_idx=col_idx+1
-    
-#     plt.suptitle(ds['title'])
-#     plt.savefig(out_filename)
-#     print(f"wrote {out_filename}")
 
 
 def read_all_stats(infiles):
