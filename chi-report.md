@@ -3,11 +3,11 @@ Comprehending CHI Cache Coherent Interconnects
 Eugene Cohen
 
 # Introduction
-In computer architecture classes we are introduced to cache coherency protocols like MSI, MESI, and MOESI, as well as snooping and directory-based appraoches.  However, as we look at modern implementations of systems we see more complexity and different terminology.  Also, it can be difficult to map to commercial implementations as not all details are publically visible.  This project focuses on understanding CHI, a modern cache coherent interconnect protocol and how it is used on advanced interconnect topologies.  One of the best ways to learn is to run real programs on real systems (or simulations of real systems) so in this project we execute workloads on the gem5 simulator modeling a mesh-topology interconnect that uses the CHI protocol.
+In computer architecture classes we are introduced to cache coherency protocols like MSI, MESI, and MOESI, as well as snooping and directory-based approaches.  However, as we look at modern implementations of systems we see more complexity and different terminology.  Also, it can be difficult to map to commercial implementations as not all details are publicly visible.  This project focuses on understanding CHI, a modern cache coherent interconnect protocol and how it is used on advanced interconnect topologies.  One of the best ways to learn is to run real programs on real systems (or simulations of real systems) so in this project we execute workloads on the gem5 simulator modeling a mesh-topology interconnect that uses the CHI protocol.
 
 The AMBA CHI Architecture Specification defines the protocol for a cache-coherent interconnect used on most ARM and many RISC-V systems. It defines a packet-based network-on-chip protocol that is used for a wide range of topologies from local subsystem interconnects to complex multi-die and multi-socket designs. The CHI interconnect relies on separate channels for requests, responses, snoops, and data transfer enabling a high degree concurrency and asynchronicity in its operations. The CHI protocol enables MESI and MOESI style coherency protocols but does so using more concise (and complex) state definitions.
 
-The gem5 simulator enables architecture exploration by simulating different processor architectures and implementations, different cache and memories hierarchies, and different interconenct and coherency protocols with the goal of analyzing performance and correctness.  The gem5 simulator supports of an entire operating system stack (Full System Emulation - FS) or execution of standalone userspace programs (System Call Emulation - SE).  Included amongst the various topologies and coherency protocols already provided in gem5 is support for the CHI protocol.  Example system configurations for CHI are available including a simple crossbar interconnect with one directory/system-level cache as well as a more advanced 2x4 mesh topology with multiple requester, home, and subordinate nodes.
+The gem5 simulator enables architecture exploration by simulating different processor architectures and implementations, different cache and memories hierarchies, and different interconnect and coherency protocols with the goal of analyzing performance and correctness.  The gem5 simulator supports of an entire operating system stack (Full System Emulation - FS) or execution of standalone userspace programs (System Call Emulation - SE).  Included amongst the various topologies and coherency protocols already provided in gem5 is support for the CHI protocol.  Example system configurations for CHI are available including a simple crossbar interconnect with one directory/system-level cache as well as a more advanced 2x4 mesh topology with multiple requester, home, and subordinate nodes.
 
 This project examines the CHI specification, following the evolution of AMBA interconnects over time, maps these concepts onto some representative commercial interconnect IPs and then seeks to reinforce these concepts by simulating programs in gem5 on a CHI mesh interconnect.  We employ a workload designed to induce coherency traffic and examine how varying workload parameters impacts system performance.
 
@@ -47,7 +47,7 @@ The AHB bus provides somewhat higher performance including support for bursts an
 
 The AXI specification defines the first high performance AMBA interconnect with support for multiple outstanding transactions and out-of-order completions to requests.  The address and data phases are decoupled.  AXI supports bursting, exclusives, and QoS identifiers.  No coherency support exists in AXI.
 
-AXI is appropriate for high performance single-core processors that do not require coherency from other system initiators such as DMA agents or other processors in a hetereogenous architecture.  AXI may be approrpiate for an embedded processor attachment or as an intermediate interconnect for peripherals that initiate their own transactions.
+AXI is appropriate for high performance single-core processors that do not require coherency from other system initiators such as DMA agents or other processors in a heterogenous architecture.  AXI may be appropriate for an embedded processor attachment or as an intermediate interconnect for peripherals that initiate their own transactions.
 
 | ![AXI Diagram](img/axi.png) |
  | :--: |
@@ -56,9 +56,9 @@ AXI is appropriate for high performance single-core processors that do not requi
 
 ### AXI4 Transaction Attributes
 
-It's worth taking a moment to study the transaction attributes for AXI.  Any initiator of a transaction drives attributes that describe the treatment of the transaction for the purposes of ordering, bufferring, caching and protection.  While this is only an interconnect specification, these attributes align with the ARMv7 architecture memory model definitions.
+It's worth taking a moment to study the transaction attributes for AXI.  Any initiator of a transaction drives attributes that describe the treatment of the transaction for the purposes of ordering, buffering, caching and protection.  While this is only an interconnect specification, these attributes align with the ARMv7 architecture memory model definitions.
 
-The **AxCACHE** signals determine the ordering, buffering and cacheability treatment for the transaction.  We divide these into cacheable and non-cacheable categories and then subidivde based on the buffering and ordering treatments.
+The **AxCACHE** signals determine the ordering, buffering and cacheability treatment for the transaction.  We divide these into cacheable and non-cacheable categories and then subdivide based on the buffering and ordering treatments.
 
 | Cacheability  | Type                   | Early Ack? | Mergeable?  | Prefetchable? | Example                        |
 | ------------- | ---------------------- | ---------- | ----------- | ------------- | ------------------------------ |
@@ -87,9 +87,9 @@ As we can see the transaction attributes are expressive as it pertains to the tr
 
 ## ACE - AXI Coherency Extensions
 
-The first time we see coherency support in the series of AMBA specification is ACE, AXI Coherency Extensions.  Why do we focus on ACE when the goal is to learn CHI?  The concepts introduced in ACE continue on into CHI and as a learning vehicle it's simpler to learn in the context of ACE than will the full complexity of the latest CHI specfication.
+The first time we see coherency support in the series of AMBA specification is ACE, AXI Coherency Extensions.  Why do we focus on ACE when the goal is to learn CHI?  The concepts introduced in ACE continue on into CHI and as a learning vehicle it's simpler to learn in the context of ACE than will the full complexity of the latest CHI specification.
 
-It's interesting that coherency support did not require a replacement of AXI but simply could be layered on top of AXI.  The way this is accomplished is by adding additional signals (DOMAIN, SNOOP, and BAR) alongside the standard AXI ones to apply additional attributes each transaction request.  In addition to added signal for transaction attributes an additional SNOOP channel is defined to allow the interconnect to send snoop and cache management reqeusts into requesters.
+It's interesting that coherency support did not require a replacement of AXI but simply could be layered on top of AXI.  The way this is accomplished is by adding additional signals (DOMAIN, SNOOP, and BAR) alongside the standard AXI ones to apply additional attributes each transaction request.  In addition to added signal for transaction attributes an additional SNOOP channel is defined to allow the interconnect to send snoop and cache management requests into requesters.
 
 
 | ![ACE Diagram](img/ace.png) |
@@ -108,7 +108,7 @@ ACE also defines a set of barrier messages to enable synchronization between wea
 
 ### ACE/CHI Cache States
 
-ACE and CHI employ a cache state model that allows MOESI style coherence but using entirely different terminology.  Fortuantely the terminology is more concise than MOESI so it's easier to reason about the meaning.
+ACE and CHI employ a cache state model that allows MOESI style coherence but using entirely different terminology.  Fortunately the terminology is more concise than MOESI so it's easier to reason about the meaning.
 
 
 | ![ACE Cache States Diagram](img/ace-cache-states.png) |
@@ -131,7 +131,7 @@ The cache states are as follows:
 
 ### ACE/CHI Transactions
 
-Where complexity really starts to emerge are in the various transaction types.  These transactions encompass the desired treatment of the data as far as whether caches should be accessed at all (NoSnoop), what state the initiator's caches will end up in, and the expected state of the target caches.  There are also transactions that are used for programmatic cache maintenance (e.g. "please flush these addresses to memory") and even transactions that are intended to provide visiblity to upstream snoop filters (Evict).
+Where complexity really starts to emerge are in the various transaction types.  These transactions encompass the desired treatment of the data as far as whether caches should be accessed at all (NoSnoop), what state the initiator's caches will end up in, and the expected state of the target caches.  There are also transactions that are used for programmatic cache maintenance (e.g. "please flush these addresses to memory") and even transactions that are intended to provide visibility to upstream snoop filters (Evict).
 
 The *intent* of these transactions can be difficult to find - for example a ReadShared is used for a Read but a ReadUnique or MakeUnique is used to prepare for a write!
 
@@ -158,7 +158,7 @@ To help manage this complexity it's useful to map the transaction types to typic
 | WriteEvict | Write clean cache line to lower cache level | Eviction of clean cache line down the hierarchy |
 
 
-Similary we can map transactions arrive at a coherent node on the Snoop channel.
+Similarly we can map transactions arrive at a coherent node on the Snoop channel.
 
 ### ACE/CHI Transactions from Interconnect to Processor (Snoop Requests)
 | Transaction | Meaning | Typical Use |
@@ -185,13 +185,13 @@ If set, resulting state will be UniqueDirty or SharedDirty
 Indicates the returned data may be held in another cache
 If set, resulting state will be SharedClean or SharedDirty
 
-Some interesting scenarios can arise here - if a requester wants a clean line and a responsder passes a dirty response then it's the interconnect's job to resolve this situation by writing data back to main memory *and* providing a clean response back to the requester.
+Some interesting scenarios can arise here - if a requester wants a clean line and a responder passes a dirty response then it's the interconnect's job to resolve this situation by writing data back to main memory *and* providing a clean response back to the requester.
 
 ### ACE/CHI Snoop Filter
 
 If the interconnect were to send snoop requests to every cache in the system we would see performance degradation due to excessive snoop traffic on the interconnect as well as excessive cache lookups as they check for matching addresses.
 
-In computer architecture classes we learn about the directory methodology for coherence, where a directory (or set of directories) track the node IDs on a per-cache block basis.  In essence an ACE/CHI Snoop Filter is conceptually the same, except we treat the Snoop Filter more like a cache than a directory.  The snoop filter will allocate an entry for any block address in an upstream cache so it can decide whether to forward coherency requests upstream or to ignore them.  In this case an entry simply consists of an address correpsonding to the cache block - so it's equivalent a cache itself with a tag and a valid bit but no data.
+In computer architecture classes we learn about the directory methodology for coherence, where a directory (or set of directories) track the node IDs on a per-cache block basis.  In essence an ACE/CHI Snoop Filter is conceptually the same, except we treat the Snoop Filter more like a cache than a directory.  The snoop filter will allocate an entry for any block address in an upstream cache so it can decide whether to forward coherency requests upstream or to ignore them.  In this case an entry simply consists of an address corresponding to the cache block - so it's equivalent a cache itself with a tag and a valid bit but no data.
 
 | ![ACE Snoop Filter Diagram](img/ace-snoop-filter.png) |
 | :--: |
@@ -217,7 +217,7 @@ So what happens if a snoop filter runs out of space?  It's not acceptable for th
 ## CHI
 
 The CHI specification builds on AXI and ACE.  It defines a layered architecture enabling
-distinct link layers with packets (Flits) riding on top.  It enables a network of nodes including abitrarily complex topologies including rings and meshes as well as aligning to physical topologies like die-to-die and socket-to-socket topologies.
+distinct link layers with packets (Flits) riding on top.  It enables a network of nodes including arbitrarily complex topologies including rings and meshes as well as aligning to physical topologies like die-to-die and socket-to-socket topologies.
 
 
 | ![CHI Topologies Diagram](img/chi-topologies.png) |
@@ -226,19 +226,19 @@ distinct link layers with packets (Flits) riding on top.  It enables a network o
 
 CHI introduces formal concepts for coherency (Point of Coherency), ordering (Point of Serialization), persistence (Point of Persistence), and encryption (Point of Encryption).
 
-Key in the CHI architecture are the roles that nodes take on.  Instead of previous generations which depicted a monolithic interconenct that could magically host caches or directories/snoop filters, CHI formalizes the relationship between the nodes with caches, nodes that manage coherency for a portion of the address map, and nodes that serve as targets for main memory accesses.
+Key in the CHI architecture are the roles that nodes take on.  Instead of previous generations which depicted a monolithic interconnect that could magically host caches or directories/snoop filters, CHI formalizes the relationship between the nodes with caches, nodes that manage coherency for a portion of the address map, and nodes that serve as targets for main memory accesses.
 
 | ![CHI Node Types](img/chi-nodes.png) |
 | :--: |
 | *CHI Node Examples, from CHI Architecture Specification* |
 
-The first category of nodes is "Reqeuster" which may have caches (RN-F, F meaning fully coherent) or may not have caches (RN-I, I meaning IO).
+The first category of nodes is "Requester" which may have caches (RN-F, F meaning fully coherent) or may not have caches (RN-I, I meaning IO).
 
 The second category of nodes is "Home" which, for addresses corresponding to cacheable memory (HN-F, meaning fully coherent) typically marks the Point of Coherency for some subset of the address space and can host system-level caches.  There is also a category of Home nodes for IO requests (HN-I) - no coherency to worry about here but the HN-I still services a role in ordering requests.
 
 The last major category of nodes is the "Subordinate" which, for coherent addresses will host a memory controller or a bridge to some other memory target.
 
-How does an RN know which HN node ID to talk to?  Conceptually there is a Requester-Node System Address Map (RN-SAM).  For performance reasons this SAM is usually co-located with the RN.  Similarly, how does an HN know which SN node ID to talk to?  It's another address map, the Home Node System Addess Map (HN-SAM). 
+How does an RN know which HN node ID to talk to?  Conceptually there is a Requester-Node System Address Map (RN-SAM).  For performance reasons this SAM is usually co-located with the RN.  Similarly, how does an HN know which SN node ID to talk to?  It's another address map, the Home Node System Address Map (HN-SAM). 
 
 Both the RN-SAM and HN-SAM can define interleaving to spread traffic across destinations.  RN-SAMs can interleave addresses across System-Level Caches and, indirectly Memory Controllers, and HN-SAMs can interleave addresses across multiple memory controllers serving that one HN.
 
@@ -249,7 +249,7 @@ The flow of transactions originates from an RN, targets an HN and then can proce
 1. RN-F0 looks in the RN-SAM and gets the node ID for the HN-F, say HN-F0.
 2. HN-F0 gets the request and checks if its local SLC slice has the data.  If not it checks its snoop filter to see if any upstream RN-Fs have the data
 3. HN-F0 determines from its snoop filter than RN-F1 has the data.  HN-F0 issues a read to RN-F1.
-4. RN-F1 performs the read and replies.  CHI includes an optimizaiton where these responses can be sent direct to the requester node and bypass the intermediate home node.
+4. RN-F1 performs the read and replies.  CHI includes an optimization where these responses can be sent direct to the requester node and bypass the intermediate home node.
 
 It's also possible that the address is not in any cache and the HN-F would:
 
@@ -275,7 +275,7 @@ The other mode of operation supported by gem5 is Syscall Emulation (SE).  In thi
 
 ## Syscall Emulation
 
-We began exploring SE mode for emulating the Linux kernel ABI and needed to confirm that SE would be capable of handling multiprocessing in one program - sending threads to other cores so we can see the appropriate interconnect and coherency effects.  Fortunately the gem5 source tree includes a basic multiprocesing test called 'threads' which distributes a matrix multiplication across all detected CPU cores.  It turns out that running this simple threads test exposed a deficiency in the capability of SE mode on some architectures.
+We began exploring SE mode for emulating the Linux kernel ABI and needed to confirm that SE would be capable of handling multiprocessing in one program - sending threads to other cores so we can see the appropriate interconnect and coherency effects.  Fortunately the gem5 source tree includes a basic multiprocessing test called 'threads' which distributes a matrix multiplication across all detected CPU cores.  It turns out that running this simple threads test exposed a deficiency in the capability of SE mode on some architectures.
 
 
 ### Building Thread Test
@@ -294,7 +294,7 @@ Note the -static switch - without this a dynamic library will be built and if yo
 
 ### SE Pitfalls
 
-Initially the intent was to use the ARM processor architecdture for the CHI coherency work because it seemed like the most natural fit - the AMBA CHI specfication originates from ARM, ARM products have the longest history with CHI, and the gem5 build for ARM selects CHI as it's default coherency protocol.  So with an ARM variant of gem5 built, we tried to execute the 'threads' program in SE mode and it immediately failed.
+Initially the intent was to use the ARM processor architecture for the CHI coherency work because it seemed like the most natural fit - the AMBA CHI specification originates from ARM, ARM products have the longest history with CHI, and the gem5 build for ARM selects CHI as it's default coherency protocol.  So with an ARM variant of gem5 built, we tried to execute the 'threads' program in SE mode and it immediately failed.
 
 ```fatal: Syscall 435 out of range```
 
@@ -318,9 +318,9 @@ and as we see there's a gap that skips over 435.
 
 How do we know what 435 means?  We could just look at glibc or linux kernel source code or through searching we can find a [quick reference](https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/#aarch64_435) from the chromium project (chromium runs on the linux kernel, so that's ok).  From this reference we see this is the clone3 syscall.  This is a series of syscalls that implements fork-like functionality as we can see from the [clone3 man page](https://man.archlinux.org/man/clone3.2.en).
 
-How is it that a test included in gem5 fails on an architeture supported in gem5 SE?  This is likely due to the fact that the C library (glibc/libstdc++) was updated at some point to change the underlying implementation for creating new threads.  The threads program does not call fork or clone directly, it uses the C++ standard threading library (std::thread) which, in turn selects the underlying syscall.  So simply by changing compilers we can select newer version of libraries that can make syscalls in a new way.  This means gem5 maintainers have a difficult job as they need to chase updates in libraries as they are made (or in our case, not).
+How is it that a test included in gem5 fails on an architecture supported in gem5 SE?  This is likely due to the fact that the C library (glibc/libstdc++) was updated at some point to change the underlying implementation for creating new threads.  The threads program does not call fork or clone directly, it uses the C++ standard threading library (std::thread) which, in turn selects the underlying syscall.  So simply by changing compilers we can select newer version of libraries that can make syscalls in a new way.  This means gem5 maintainers have a difficult job as they need to chase updates in libraries as they are made (or in our case, not).
 
-Interestingly, for the clone3 syscall there is support present in gem5 for *other* architecdtures, specifically X86 and RISC-V::
+Interestingly, for the clone3 syscall there is support present in gem5 for *other* architectures, specifically X86 and RISC-V::
 
 ```
 src/arch/x86/linux/syscall_tbl64.cc:    { 435, "clone3", clone3Func<X86Linux64> },
@@ -373,14 +373,14 @@ We then built this RISCV_CHI variant and used it for the project.
 
 # CHI Topology Configuration in gem5
 
-With the project focused on understanding CHI coherency we expolored the interconnect topology options already present in gem5.  For CHI, the following configurations are supported:
+With the project focused on understanding CHI coherency we explored the interconnect topology options already present in gem5.  For CHI, the following configurations are supported:
 * Crossbar
 * Pt2Pt
 * CustomMesh
 
 ### Pt2Pt
 
-The point-to-point is a single interconenct with direct connectivity between all nodes.  The  concept implies that requests can traverse the interconnect without having to wait for transaction buffer resources and without incurring additional hops along the way.
+The point-to-point is a single interconnect with direct connectivity between all nodes.  The  concept implies that requests can traverse the interconnect without having to wait for transaction buffer resources and without incurring additional hops along the way.
 
 | ![Point-to-Point Diagram](img/pt2pt.png) |
 | --|
@@ -388,7 +388,7 @@ The point-to-point is a single interconenct with direct connectivity between all
 
 ### Crossbar
 
-Practically speaking an everything-to-everything topology is not realistic.  A common approach for small interconencts is a crossbar where the interconnect contains a crossbar switch allowing simulatneous streams of communication between separate initiators and targets.  The crossbar switch is itself a contstrained resource because it is limited by internal connectivity and internal queues/FIFOs resources.
+Practically speaking an everything-to-everything topology is not realistic.  A common approach for small interconnects is a crossbar where the interconnect contains a crossbar switch allowing simultaneous streams of communication between separate initiators and targets.  The crossbar switch is itself a constrained resource because it is limited by internal connectivity and internal queues/FIFOs resources.
 
 ![Point-to Diagram](img/chi-xbar.png)
 
@@ -440,7 +440,7 @@ So combining all the information from the 2x4 NOC config we can visualize the to
 
 ## Mapping gem5 Resources to CHI Topology
 
-When we invoke gem5 via the Syscall Emulation wrapper script, se.py we pass parameters and these get mapped by the CHI configuration logic into a specfiic topology.    In some cases there may not always be a perfect match between the resources specified on invocation and the topology described for the interconnect so the mapping process will fill available slots, like mapping gem5 CPU instances to CHI RN-f nodes.
+When we invoke gem5 via the Syscall Emulation wrapper script, se.py we pass parameters and these get mapped by the CHI configuration logic into a specific topology.    In some cases there may not always be a perfect match between the resources specified on invocation and the topology described for the interconnect so the mapping process will fill available slots, like mapping gem5 CPU instances to CHI RN-f nodes.
 
 
 | Option         | Example              | Meaning                                                  |
@@ -552,7 +552,7 @@ The interleaving is based on numa_bit (6) and routes to different HNFs based on 
 
 ### Permutations
 
-We define 8 test permutations, varying the number number of processors, and across either packed (stride 1) or padded (stride 16) configurations.
+We define 8 test permutations, varying the number of processors, and across either packed (stride 1) or padded (stride 16) configurations.
 
 |   Case      | Cores | Stride |
 | ----------- | ----- | ------ |
@@ -596,7 +596,7 @@ In Figure 2 the left three charts reflect outbound traffic from the L1 d-cache, 
 
 The SendReadShared is the response to a ReadShared transaction from the interconnect indicating another core is performing the read portion of the read-modify-write.
 
-The SendReadUnique is the response to a ReadUnique transaction from the interconnet indicating preparation for a write where the data did not already exist in the cache of the requesting CPU.  Why would this be the case during a read-modify-write?  Another CPU can take ownership of the cacheline to do a write between this CPU's read and write such that the write causes a ReadUnique.
+The SendReadUnique is the response to a ReadUnique transaction from the interconnect indicating preparation for a write where the data did not already exist in the cache of the requesting CPU.  Why would this be the case during a read-modify-write?  Another CPU can take ownership of the cacheline to do a write between this CPU's read and write such that the write causes a ReadUnique.
 
 The SendCleanUnique is the response to a CleanUnique from the interconnect indicating preparation for a write where the data already existed in the requesting CPU cache in a Shared state.  This reflects the upgrade in the read-modify-write sequence where the requesting CPU managed to retain the cacheline across the read and write.
 
@@ -657,10 +657,7 @@ As discussed when we analyzing the L1 data cache snoop traffic, we see both Read
 
 We were able to comprehend the Coherent Hub Interconnect protocol and interconnect topologies that arise from it.  We followed the evolution of CHI from basic peripheral interconnects to multi-requester interconnects, support for complex topologies and more performance traffic flows and eventually full system coherency.  Although the protocol is quite complex we can simplify our understanding by mapping to the five basic CHI coherency states and reasoning about how and why we transition between those states.
 
-We found that with some effort gem5 can be configured for either Full System or Syscall Emulation modes, learned how to select the coherency protocol at build time, and learned about system call compatilbity in SE mode.  The gem5 CHI building blocks allow us to model complex topologies and simulate multiprocessor workloads accordingly.  We did discover limitations of gem5 CHI topology mapping and a more flexible topology specification system is necessary for modeling more realistic topologies.
+We found that with some effort gem5 can be configured for either Full System or Syscall Emulation modes, learned how to select the coherency protocol at build time, and learned about system call compatibility in SE mode.  The gem5 CHI building blocks allow us to model complex topologies and simulate multiprocessor workloads accordingly.  We did discover limitations of gem5 CHI topology mapping and a more flexible topology specification system is necessary for modeling more realistic topologies.
 
 We developed a test program that generates coherency traffic and was able to illustrate through test workloads of varying core counts and shared data placement that we could capture coherency traffic and reason about differences in the data.
 
-
-
-TODO SPELL CHECK!
