@@ -39,6 +39,12 @@ function run_thrash_xbar {
 
 }
 
+# build the thrasher app, requires apt install gcc-riscv64-linux-gnu
+pushd tests/test-progs/thrasher/src/
+mkdir -p ../bin/riscv/linux/
+make ../bin/riscv/linux/thrasher
+popd
+
 run_thrash_mesh RiscvTimingSimpleCPU 1 1 out_1c_stride1
 run_thrash_mesh RiscvTimingSimpleCPU 2 1 out_2c_stride1
 run_thrash_mesh RiscvTimingSimpleCPU 4 1 out_4c_stride1
