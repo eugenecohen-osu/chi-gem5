@@ -75,9 +75,27 @@ plot_list = [
         ]
     },
     {
-        'title': 'CPU0 L1 D-Cache Snoop Traffic',
+        'title': 'CPU0 L1 D-Cache Traffic',
         'filename': 'l1-traffic.png',
         'subplots' : [
+            {
+                'title': 'SendReadShared',
+                #'y-scale': 'log',
+                're': r'system\.cpu[0]*\.l1d\.outTransLatHist\.SendReadShared::total\s+(\S+)',
+                'y-label': 'count'
+            },
+            {
+                'title': 'SendReadUnique',
+                #'y-scale': 'log',
+                're': r'system\.cpu[0]*\.l1d\.outTransLatHist\.SendReadUnique::total\s+(\S+)',
+                'y-label': 'count'
+            },
+            {
+                'title': 'SendCleanUnique',
+                #'y-scale': 'log',
+                're': r'system\.cpu[0]*\.l1d\.outTransLatHist\.SendCleanUnique::total\s+(\S+)',
+                'y-label': 'count'
+            },
             {
                 'title': 'SnpCleanInvalid',
                 'y-scale': 'log',
@@ -216,7 +234,8 @@ def make_plot(plot, outdir):
     grid_rows=1
     grid_cols=len(plot['subplots'])
 
-    plt.figure(figsize=(9, 3)) # todo: do we have to hardcode figure size?
+    width = 3.5 * len(plot['subplots'])
+    plt.figure(figsize=(width, 3)) # todo: do we have to hardcode figure size?
 
     col_idx=1
     #for ds in data:
