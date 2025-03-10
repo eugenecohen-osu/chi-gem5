@@ -24,7 +24,7 @@ This project examines the CHI specification, following the evolution of AMBA int
 | CHI  | Coherent Hub Interconnect | 2014 | Redesigned transport layer for higher performance
 
 
-## APB - Advanced Peripheral Bus 
+## APB - Advanced Peripheral Bus
 
 ![APB Diagram](img/apb.png)
 
@@ -38,7 +38,7 @@ This project examines the CHI specification, following the evolution of AMBA int
   * Coherency
 
 
-## AHB - Advanced High Performance Bus 
+## AHB - Advanced High Performance Bus
 
 ![AHB Diagram](img/ahb.png)
 (Diagram from AMBA AHB Protocol Specification)
@@ -100,7 +100,7 @@ This project examines the CHI specification, following the evolution of AMBA int
 ![ACE Diagram](img/ace.png)
 (from ARM CoreLink CCI-400 TRM)
 
-* Fully cache-coherent 
+* Fully cache-coherent
 * Adds snoop channels
 * Distributed Virtual Memory
 * Barriers
@@ -175,7 +175,7 @@ If set, resulting state will be SharedClean or SharedDirty
 ![ACE Snoop Filter Diagram](img/ace-snoop-filter.png)
 (from ARM CoreLink CCI-5500 TRM)
 
-* Reduce coherency broadcasts 
+* Reduce coherency broadcasts
 * Track tags from upstream caches
   * A cache of tags without data
   * If capacity exceeded, perform a back-invalidation in upstream caches
@@ -216,7 +216,7 @@ Processor B has a choice about who is responsible for eventually writing back da
 Option 1 – B retains writeback responsibility:
   * Processor A: SharedClean
   * Processor B: SharedDirty
-  
+
 Option 2 – B relinquishes writeback responsibility:
   * Processor A: SharedDirty
   * Processor B: SharedClean
@@ -240,9 +240,27 @@ For the CHI coherency project we started exporting FS mode and it was observed t
 
 The other mode of operation supported by gem5 is Syscall Emulation (SE).  In this mode user-space applications are executed and any time a call is made to an OS kernel the call is intercepted by gem5 and handled natively on the host.  This has the benefit of a major performance improvement over FS because with SE you can skip the OS boot process and begin executing the first program opcodes within a few seconds.  A downside of SE is that it does not match the OS behaviors for interacting with hardware which for an architectural simulator can be important when it comes to things like utilization of caches, TLBs and memory.  The Syscall Emulation mode also requires that syscalls that appear in programs are well-supported in gem5.  If a new syscall is added to, say, the Linux ABI then gem5 will need to be updated to faithfully handle (or sometimes ignore) the syscall so the program can function.
 
-### Syscall Emulation Pitfalls
+
+## Syscall Emulation
 
 We began exploring SE mode for emulating the Linux kernel ABI and needed to confirm that SE would be capable of handling multiprocessing in one program - sending threads to other cores so we can see the appropriate interconnect and coherency effects.  Fortunately the gem5 source tree includes a basic multiprocesing test called 'threads' which distributes a matrix multiplication across all detected CPU cores.  It turns out that running this simple threads test exposed a deficiency in the capability of SE mode on some architectures.
+
+
+### Building Thread Test
+By default this is only built for x86 but the makefile at tests/test-progs/threads/src/Makefile can be adjusted to add ARM and RISC-V architectures:
+
+```
+../bin/arm/linux/threads: threads.cpp
+	aarch64-linux-gnu-g++ -static -o ../bin/arm/linux/threads threads.cpp -pthread -std=c++11
+
+../bin/riscv/linux/threads: threads.cpp
+	riscv64-linux-gnu-g++ -static -o ../bin/riscv/linux/threads threads.cpp -pthread -std=c++11
+```
+
+Note the -static switch - without this a dynamic library will be built and if you are running cross-architecture some difficult dynamic library path fixups will be required.
+
+
+### SE Pitfalls
 
 Initially the intent was to use the ARM processor architecdture for the CHI coherency work because it seemed like the most natural fit - the AMBA CHI specfication originates from ARM, ARM products have the longest history with CHI, and the gem5 build for ARM selects CHI as it's default coherency protocol.  So with an ARM variant of gem5 built, we tried to execute the 'threads' program in SE mode and it immediately failed.
 
@@ -278,8 +296,6 @@ src/arch/riscv/linux/se_workload.cc:    { 435,  "clone3", clone3Func<RiscvLinux6
 src/sim/syscall_emul.hh:clone3Func(SyscallDesc *desc, ThreadContext *tc,
 ```
 
-So as an experiment we ported this support from RISC-V to ARM and were able to successfully execute the threads program.
-
 This led to the broader question - what other syscalls might we be missing?  Since we are building a plain linux executable, we can run it on a different machine and use strace under linux (the full OS this time) to trace syscall usage.  On an arm64 host/vm/qemu we launch the command under strace thusly:
 
 ```strace -n -o strace.txt ./threads```
@@ -301,10 +317,14 @@ and thanks to the -n switch we can see the syscalls including syscall number:
 
 and cross-reference this to gem5's syscall emulation table
 
-However this broken-syscall experience served as a warning, that the ARM architecture is not being maintained quite as well in 2025 as X86 and RISC-V.  Since it is possible for CHI to be used with other architectures we switched from ARM to RISC-V at this point.
+#### Switching from ARM to RISC-V SE
+
+We ported clone3 syscall support from RISC-V to ARM and were able to successfully execute the threads program, however the number of cores detected was incorrect.  Digging into this deeper there was another deficiency in syscall emulation around handling special files used by glibc to detect the number of processor cores via special filesystem paths like `/sys/devices/system/cpu/online`.
+
+This raised a question - is it possible that other architectures have better SE/syscall support than ARM?  The same threads program was built and tested under gem5 in RISC-V mode and worked the first time with proper clone3 handling and the correct detection of number of CPU cores.  This led us to conclude that the ARM architecture is not being maintained quite as well in 2025 as X86 and RISC-V.  Since it is possible for CHI to be used with other architectures we switched from ARM to RISC-V at this point.
 
 
-### Build gem5 for RISC-V with CHI Coherency
+#### Build gem5 for RISC-V with CHI Coherency
 
  The default coherency protocol for gem5 for RISC-V is not CHI so we needed a way to get RISC-V and CHI working together.  Although most aspects of the system construction can be changed when starting gem5 without rebuilding it, switching to a different coherency protocol requires a specialized build configuration for gem5.  We had to create a new gem5 configuration file, placed at build_opts/RISCV_CHI which specifies that we want RISCV but also to use RUBY and the CHI coherency protocol:
 
@@ -319,7 +339,7 @@ USE_RISCV_ISA=y
 We then built this RISCV_CHI variant and used it for the project.
 
 
-## CHI Topology
+# CHI Topology Configuration in gem5
 
 With the project focused on understanding CHI coherency we expolored the interconnect topology options already present in gem5.  For CHI, the following configurations are supported:
 * Crossbar
@@ -328,9 +348,11 @@ With the project focused on understanding CHI coherency we expolored the interco
 
 ### Pt2Pt
 
-The point-to-point is a single interconenct with direct connectivity between all nodes.  The  concept implies that requests can traverse the interconnect without having to wait for transaction buffer resources and without incurring additional hops along the way.  
+The point-to-point is a single interconenct with direct connectivity between all nodes.  The  concept implies that requests can traverse the interconnect without having to wait for transaction buffer resources and without incurring additional hops along the way.
 
-![Point-to-Point Diagram](img/pt2pt.png)
+| ![Point-to-Point Diagram](img/pt2pt.png) |
+| --|
+| from [gem5 Interconnection Network](https://www.gem5.org/documentation/general_docs/ruby/interconnection-network/) documentation |
 
 ### Crossbar
 
@@ -402,42 +424,12 @@ When we invoke gem5 via the Syscall Emulation wrapper script, se.py we pass para
 One thing that is not possible with the mapping system is being able to specify different latencies for different links.  We hoped that we could model some links as having higher latency to simulate a multi-die or multi-socket NUMA scenario.  This limitation is not inherent in gem5 or even in CHI support, it's only a limitation of the convenient mapping system provided.   It would be possible to more directly specify the configuration through customizing configuration scripts.
 
 
-
-## Multi-Threaded Execution in gem5 Syscall Emulation
-
-There is a multi-threaded test in the gem5 source tree already at tests/test-progs/threads/src/threads.cpp .  This uses C++ standard threading (std::thread).
-
-### Building Thread Test
-By default this is only built for x86 but the makefile at tests/test-progs/threads/src/Makefile can be adjusted to add other architectures:
-
-```
-../bin/x86/linux/threads: threads.cpp
-	g++ -o ../bin/x86/linux/threads threads.cpp -pthread -std=c++11
-
-../bin/arm/linux/threads: threads.cpp
-	aarch64-linux-gnu-g++ -static -o ../bin/arm/linux/threads threads.cpp -pthread -std=c++11
-
-../bin/riscv/linux/threads: threads.cpp
-	riscv64-linux-gnu-g++ -static -o ../bin/riscv/linux/threads threads.cpp -pthread -std=c++11
-```
-
-Note the -static switch - without this a dynamic library will be built and if you are running cross-architecture some difficult dynamic library path fixups will be required.
-
-#### Note about Syscall Emulation on ARM
-
-The ARM SE support has fallen behind both X86 and RISC-V.  For example the clone3 syscall is not supported on ARM even though it is on X86 and RISC-V.  This seems to indicate that gem5 ARM support is not getting the same level of attention as other architectures.
-
-Even porting clone3 syscall support to ARM there are other defects like handling of special files such as handling of special filesystem devices like `/sys/devices/system/cpu/online` which is used by std::threading to detect number of cores.
-
-Because ARM syscall emulation has fallen behind we choose to focus on RISC-V which is better suproted in gem5.
-
-
-#### Note About Deprecation Warnings for se.py 
+#### Note About Deprecation Warnings for se.py
 
 Note: The gem5 scripts will warn that se.py is deprecated.  However for many configurations there are no alternatives in-tree that don't use se.py, specifically the CHI.py module which requires the command-line options and system construction from se.py.  If you try to avoid this you end up going on a wild goose chase and end up back to realizing that se.py is the only way to go until the in-tree configurations are rewritten.
 
 
-## Thrasher Test Program
+# Thrasher Test Program
 
 In order to ensure that interesting coherency traffic occurs we need a multi-processor environment where cores share data in the same cachelines.  We created a multi-threaded test case that is designed to generate coherency traffic by inducing false-sharing.
 
@@ -451,7 +443,7 @@ By increasing the stride of allocations we can ensure that the data is located f
 
 ![Padded Data Diagram](img/padded-example.png)
 
-### Invocation
+## Thrasher Invocation
 
 The program accepts one argument which is the stride in memory for the respective 32-bit values.  A stride of 1 will pack the values together so that values shared by different CPUs will occupy one 64-byte cacheline.  (We can fit up to 16 CPUs worth of uint32/4-byte data in one 64-byte cacheline).
 
@@ -475,16 +467,58 @@ a[i] at address 0x 23c2a0
 a[i] at address 0x 23c2e0
 ```
 
-### Test Cases
+## Test Cases
 
-#### Configuration
+### Configuration
 
-We execute using gem5 Syscall Emulation (SE) using the CHI 2x4 mesh using 2 HN-Fs with caches.  Each CPU is a RiscvTimingSimpleCPU and each have their own L1 Data, L1 Instruction and Unified L2 caches.
+We executed using gem5 SE with the CHI 2x4 mesh using 2 HN-Fs with caches.  Each CPU is a RiscvTimingSimpleCPU and each have their own L1 Data, L1 Instruction and Unified L2 caches.
 
-TODO: get cache sizes
-TODO: get model latencies and clock rates
+| Config                             | Value        |
+| ---------------------------------- | ------------ |
+| cache_line_size                    |         64 B |
+| system.cpuN.l1d.cache.size         | 64 KB, |
+| system.cpuN.l1d.cache.assoc        | 2-way |
+| system.cpuN.l1dicache.size         | 32 KB, |
+| system.cpuN.l1dicache.assoc        | 2-way |
+| system.cpuN.l2.cache.size          |   2MB |
+| system.cpuN.l2.cache.assoc         |  8-way |
+| system.ruby.hnfN.cntrl.cache.size  | 16MB |
+| system.ruby.hnfN.cntrl.cache.assoc | 16-way |
 
-#### Permutations
+Since our test will be focused on cache coherency thrashing, the sizes of caches are immaterial.  The cacheline size however is vital to understand the role of data placement and how it induces false sharing.
+
+#### Memory Interleaving
+
+The CHI configuration subsystem automatically configures address interleaving across HNFs as a function of cache line size (64B in our system) and the # of HNFs (2 in our system):
+
+```
+        # Create the HNFs interleaved addr ranges
+        block_size_bits = int(math.log(cache_line_size, 2))
+        llc_bits = int(math.log(len(hnfs), 2))
+        numa_bit = block_size_bits + llc_bits - 1
+        for i, hnf in enumerate(hnfs):
+            ranges = []
+            for r in sys_mem_ranges:
+                addr_range = AddrRange(
+                    r.start,
+                    size=r.size(),
+                    intlvHighBit=numa_bit,
+                    intlvBits=llc_bits,
+                    intlvMatch=i,
+```
+
+So we get:
+
+> block_size_bits = log2(64) = 6
+>
+> llc_bits = log2(2) = 1
+>
+> numa_bit = 6 + 1 - 1 = 6
+
+The interleaving is based on numa_bit (6) and routes to different HNFs based on this value - HNF0 gets transactions addresses where bit 6 is zero and HNF1 gets transactions whose address bit 6 is one.
+
+
+### Permutations
 
 We define 8 test permutations, varying the number number of processors, and across either packed (stride 1) or padded (stride 16) configurations.
 
@@ -500,7 +534,7 @@ We define 8 test permutations, varying the number number of processors, and acro
 | 8c-stride16 |   8   |   16   |
 
 
-### Data Collected
+## Data Collected
 
 To analyze the effect of coherency on CPU performance we collect CPU cycles and cycles per instruction (CPI) as we expect the CPU performance to reduce (more cycles, higher CPI) as coherency traffic increases.
 
@@ -514,25 +548,87 @@ We also capture counters for CHI coherency traffic at the HN-Fs, snoops to L2 ca
 | HNF Snoops   | Examine coherency traffic as well as HN-F SAM effects            |
 
 
+# Test Results
 
-## Test Results
+We examine the CPU performance as measured across eight workloads representing the permutations of CPU core count and data stride inducing false-sharing.  We use total CPU cycles as a measure of performance as the same work is being done in all cases, so additional CPU cycles reveal time the CPU spends waiting for data.
 
-![CPU Cycles](png/cycles.png)
+Figure 1 depicts how CPU cycles increase in proportion to the number of CPU cores when false-sharing is induced.  When false-sharing is avoided we see the CPU cycle counts remain constant across CPU core counts.  This data demonstrates the significance of coherency on CPU performance.  It doesn't matter how large or how plentiful the caches are, if shared data is placed poorly performance will suffer dramatically.
 
-![CPI](png/cpi.png)
+| ![CPU Cycles](png/cycles.png) |
+| :--: |
+| Figure 1: CPU Cycles |
 
-![L1 Snoop Traffic](png/l1-traffic.png)
+We examine traffic to the CPU L1 cache.  We focused on CPU0 as we expect similar traffic patterns across all CPUs given the symmetric nature of the workload.  This traffic reveals a stark contrast between the false-sharing and the no-false-sharing cases.
 
-![L2 Snoop Traffic](png/l2-traffic.png)
+In Figure 2 the left three charts reflect outbound traffic from the L1 d-cache, from the CPU towards the interconnect.  The right two charts reflect inbound traffic to the L1 d-cache from the interconnect towards the CPU.
 
-![HNF ReadShared Count](png/hnf-readshared.png)
+The SendReadShared is the response to a ReadShared transaction from the interconnect indicating another core is performing the read portion of the read-modify-write.
 
-![HNF ReadUnique Count](png/hnf-readunique.png)
+The SendReadUnique is the response to a ReadUnique transaction from the interconnet indicating preparation for a write where the data did not already exist in the cache of the requesting CPU.  Why would this be the case during a read-modify-write?  Another CPU can take ownership of the cacheline to do a write between this CPU's read and write such that the write causes a ReadUnique.
 
-![HNF CleanUnique Count](png/hnf-cleanunique.png)
+The SendCleanUnique is the response to a CleanUnique from the interconnect indicating preparation for a write where the data already existed in the requesting CPU cache in a Shared state.  This reflects the upgrade in the read-modify-write sequence where the requesting CPU managed to retain the cacheline across the read and write.
 
-TODO writeup
+
+| ![L1 Snoop Traffic](png/l1-traffic.png) |
+| :--: |
+| Figure 2: L1 D-Cache Traffic |
+
+In essence we are seeing two modes due to the timing of concurrent execution, one where the read-modify-write occurs with the cacheline remains resident in the originating CPU's L1 data cache for the duration of the RmW operation and another mode where the cacheline is migrated in the middle of the RmW operation.
+
+Note that we do see some surprising variations per-core which we suspect is due to other CPU caches holding data given the timing of cacheline movement.  We suspect that other CPUs will account for the missing data but this could not be confirmed at the time of writing.
+
+
+| ![L2 Snoop Traffic](png/l2-traffic.png) |
+| :--: |
+| Figure 3: L2 Snoop Traffic |
+
+The L2 snoop traffic depicted in Figure 3 matches the snoop traffic we see to L1.  This makes  sense as the working set of this simply coherency test does not make use of L2 cache for capacity purposes.  Instead the L2 only serves as a hop along the way for coherency traffic.
+
+| ![HNF ReadShared Count](png/hnf-readshared.png) |
+| :--: |
+| Figure 4: HNF ReadShared Traffic |
+
+Although the Home Nodes contain system-level (L3) caches, again as our working set is so small these are not used for storing data.  But the Home Nodes do serve as directories for main memory and we see that effect as the majority of traffic targets HNF0.  (Be sure to check the y-axis on the HNF0 and HNF1 charts as they vary by two orders of magnitude!)
+
+Why HNF0?  Recall that memory is interleaved across HNFs at a 64B granularity.  With our data placement at:
+
+stride-1:
+```
+a[i] at address 0x 23c220
+a[i] at address 0x 23c224
+a[i] at address 0x 23c228
+a[i] at address 0x 23c22c
+```
+
+stride-16:
+```
+a[i] at address 0x 23c220
+a[i] at address 0x 23c260
+a[i] at address 0x 23c2a0
+a[i] at address 0x 23c2e0
+```
+
+We can see in all cases that bit 6 is zero (0x20 -> 0b0**0**10_0000) so all accesses, for both packed and padded cases.  For this workload HNF interleave has no direct bearing on the result but it allows us to collect the coherency traffic counts under one node.
+
+| ![HNF ReadUnique Count](png/hnf-readunique.png) |
+| :--: |
+| Figure 5: HNF ReadUnique Traffic |
+
+As discussed when we analyzing the L1 data cache snoop traffic, we see both ReadUnique and CleanUnique reflecting the two modes of operation, intact RmW and split RmW sequences.
+
+| ![HNF CleanUnique Count](png/hnf-cleanunique.png) |
+| :--: |
+| Figure 5: HNF CleanUnique Traffic |
+
 
 # Conclusion
 
-TODO Able to understand CHI, simulate CHI interconnects and examine coherency effects as well as mitigation through data placement
+We were able to comprehend the Coherent Hub Interconnect protocol and interconnect topologies that arise from it.  We followed the evolution of CHI from basic peripheral interconnects to multi-requester interconnects, support for complex topologies and more performance traffic flows and eventually full system coherency.  Although the protocol is quite complex we can simplify our understanding by mapping to the five basic CHI coherency states and reasoning about how and why we transition between those states.
+
+We found that with some effort gem5 can be configured for either Full System or Syscall Emulation modes, learned how to select the coherency protocol at build time, and learned about system call compatilbity in SE mode.  The gem5 CHI building blocks allow us to model complex topologies and simulate multiprocessor workloads accordingly.  We did discover limitations of gem5 CHI topology mapping and a more flexible topology specification system is necessary for modeling more realistic topologies.
+
+We developed a test program that generates coherency traffic and was able to illustrate through test workloads of varying core counts and shared data placement that we could capture coherency traffic and reason about differences in the data.
+
+
+
+TODO SPELL CHECK!
