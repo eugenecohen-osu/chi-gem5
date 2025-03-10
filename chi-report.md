@@ -214,47 +214,49 @@ So what happens if a snoop filter runs out of space?  It's not acceptable for th
   * like Evict to inform filter when lines are invalidated due to capacity
 
 
-
 ## CHI
-### CHI Channel Architecture
-### CHI Transaction Types
-#### CHI Requests
-#### CHI Responses
 
-### CHI Coherent Flows
-
-Address X is in caches of both processors A and B in SharedClean state
-  * Processor A: SharedClean
-  * Processor B: SharedClean
-
-Processor B wants to write address X so it prepares by sending a MakeUnique to Processor A
-  * Processor A: Invalid
-  * Processor B: UniqueClean
-
-Processor B performs the write to its cache
-  * Processor A: Invalid
-  * Processor B: UniqueDirty
+The CHI specification builds on AXI and ACE.  It defines a layered architecture enabling
+distinct link layers with packets (Flits) riding on top.  It enables a network of nodes including abitrarily complex topologies including rings and meshes as well as aligning to physical topologies like die-to-die and socket-to-socket topologies.
 
 
-Address X is in dirty and only in Processor B’s cache
-  * Processor A: Invalid
-  * Processor B: UniqueDirty
+| ![CHI Topologies Diagram](img/chi-topologies.png) |
+| :--: |
+| *Example CHI Topologies, from CHI Architecture Specification* |
 
-Processor A wants to read address X so it sends a ReadShared
-Processor B has a choice about who is responsible for eventually writing back data
+CHI introduces formal concepts for coherency (Point of Coherency), ordering (Point of Serialization), persistence (Point of Persistence), and encryption (Point of Encryption).
 
-Option 1 – B retains writeback responsibility:
-  * Processor A: SharedClean
-  * Processor B: SharedDirty
+Key in the CHI architecture are the roles that nodes take on.  Instead of previous generations which depicted a monolithic interconenct that could magically host caches or directories/snoop filters, CHI formalizes the relationship between the nodes with caches, nodes that manage coherency for a portion of the address map, and nodes that serve as targets for main memory accesses.
 
-Option 2 – B relinquishes writeback responsibility:
-  * Processor A: SharedDirty
-  * Processor B: SharedClean
+| ![CHI Node Types](img/chi-nodes.png) |
+| :--: |
+| *CHI Node Examples, from CHI Architecture Specification* |
 
-Option 3 – B evicts the cacheline:
-  * Processor A: UniqueDirty
-  * Processor B: Invalid
+The first category of nodes is "Reqeuster" which may have caches (RN-F, F meaning fully coherent) or may not have caches (RN-I, I meaning IO).
 
+The second category of nodes is "Home" which, for addresses corresponding to cacheable memory (HN-F, meaning fully coherent) typically marks the Point of Coherency for some subset of the address space and can host system-level caches.  There is also a category of Home nodes for IO requests (HN-I) - no coherency to worry about here but the HN-I still services a role in ordering requests.
+
+The last major category of nodes is the "Subordinate" which, for coherent addresses will host a memory controller or a bridge to some other memory target.
+
+How does an RN know which HN node ID to talk to?  Conceptually there is a Requester-Node System Address Map (RN-SAM).  For performance reasons this SAM is usually co-located with the RN.  Similarly, how does an HN know which SN node ID to talk to?  It's another address map, the Home Node System Addess Map (HN-SAM). 
+
+Both the RN-SAM and HN-SAM can define interleaving to spread traffic across destinations.  RN-SAMs can interleave addresses across System-Level Caches and, indirectly Memory Controllers, and HN-SAMs can interleave addresses across multiple memory controllers serving that one HN.
+
+### Basic CHI Flow
+
+The flow of transactions originates from an RN, targets an HN and then can proceed many places in the system depending on where the data resides.  Consider a case where we are performing a coherent data read from RN-F0.
+
+1. RN-F0 looks in the RN-SAM and gets the node ID for the HN-F, say HN-F0.
+2. HN-F0 gets the request and checks if its local SLC slice has the data.  If not it checks its snoop filter to see if any upstream RN-Fs have the data
+3. HN-F0 determines from its snoop filter than RN-F1 has the data.  HN-F0 issues a read to RN-F1.
+4. RN-F1 performs the read and replies.  CHI includes an optimizaiton where these responses can be sent direct to the requester node and bypass the intermediate home node.
+
+It's also possible that the address is not in any cache and the HN-F would:
+
+3. Look in the HN-SAM to find the node ID for the SN-F, say SN-F0.
+4. SN-F0 performs the read and replies.  
+
+Now that we have a basic understanding of CHI topologies and coherence we can move on to some real (but simulated) systems and workloads.
 
 # Analyzing CHI Coherency Performance with gem5
 
