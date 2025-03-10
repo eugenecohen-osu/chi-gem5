@@ -11,105 +11,112 @@ The gem5 simulator enables architecture exploration by simulating different proc
 
 This project examines the CHI specification, following the evolution of AMBA interconnects over time, maps these concepts onto some representative commercial interconnect IPs and then seeks to reinforce these concepts by simulating programs in gem5 on a CHI mesh interconnect.  We employ a workload designed to induce coherency traffic and examine how varying workload parameters impacts system performance.
 
-# AMBA Coherent Hub Interconnect
+# AMBA Evolution from APB to CHI
 
 ## Specifications
 
-| Title | Spec | Year | Key Features |
-| ----- | ---- | ---- | ------------ |
-| APB | Advanced Peripheral Bus | 1997 |
-| AHB | Advanced High Performance Bus | 1997| | Multiple masters, larger bus widths
-| AXI3  | Advanced eXtensible Interface | 2003 | Higher perf, higher clock freq
-| ACE  | AXI Coherency Extensions | 2010 | Additional signaling for system-wide coherency
-| CHI  | Coherent Hub Interconnect | 2014 | Redesigned transport layer for higher performance
+| Title | Spec                             | Year | Key Features                                       |
+| ----- | -------------------------------- | ---- | -------------------------------------------------- |
+| APB   | Advanced Peripheral Bus          | 1997 | Simple                                             |
+| AHB   | Advanced High Performance Bus    | 1997 | Multiple masters, larger bus widths                |
+| AXI3  | Advanced eXtensible Interface    | 2003 | Higher perf, higher clock freq                     |
+| ACE   | AXI Coherency Extensions         | 2010 | Additional signaling for system-wide coherency     |
+| CHI   | Coherent Hub Interconnect        | 2014 | Redesigned transport layer for higher performance  |
 
 
 ## APB - Advanced Peripheral Bus
 
-![APB Diagram](img/apb.png)
+ | ![APB Diagram](img/apb.png) |
+ | :--: |
+ | *Advanced Peripheral Bus Subsystem* |
 
-* One requester, N responders
-* One shared bus for address, read+write data, response
-* Decoder in bridge selects peripheral
-* No:
-  * Bursting
-  * Exclusives
-  * Overlapping transactions
-  * Coherency
+The APB bus is a shared bus parallel bus with separate select lines.  It relies on an upstream device (depicted above as an APB bridge) to decode address ranges to assert the proper select line for the peripheral.  There is only one requester from the perspective of the APB bus so there is no concept of multi-initiator operation or arbitration.
+
+APB is a low performance bus so it does not support bursting, exclusive accesses, overlapping transactions or coherency.  The shared bus for address, data, attributes and strobes inherently limits performance and scalability but is optimal for small designs. 
 
 
 ## AHB - Advanced High Performance Bus
 
-![AHB Diagram](img/ahb.png)
-(Diagram from AMBA AHB Protocol Specification)
+| ![AHB Diagram](img/ahb.png) |
+ | :--: |
+ | *Diagram from AMBA AHB Protocol Specification* |
 
-* Multiple requestors, multiple responders
-  * although arbitration is not defined in AHB spec
-* Burst transfers
-* Exclusive transfers
-* Shared bus or Crossbar
-* No:
-  * Overlapping transactions
-  * Coherency
-
+The AHB bus provides somewhat higher performance including support for bursts and exclusives.  It can support multiple initiators with some arbitration logic.  Like APB, the address is decoded and used to select the appropriate target device.  Additional logic is needed to select read data. There is still no support for overlapping transactions or coherency.  The AHB bus is suitable for small microcontroller cores or equivalently simple processors.  AHB could be implemented as a point-to-point or as a simple crossbar.
 
 ## AXI - Advanced eXtensible Interface
 
-![AXI Diagram](img/axi.png)
-(Diagram from: What is AMBA?, https://www.youtube.com/watch?v=CZlDTQzOfq4)
+The AXI specification defines the first high performance AMBA interconnect with support for multiple outstanding transactions and out-of-order completions to requests.  The address and data phases are decoupled.  AXI supports bursting, exclusives, and QoS identifiers.  No coherency support exists in AXI.
 
-* Separate read and write channels
-* Multiple outstanding transactions
-* Out-of-order completions
-* Decoupled address and data
-* Burst transactions
-* Exclusive transactions
-* Quality-of-service identifiers
+AXI is appropriate for high performance single-core processors that do not require coherency from other system initiators such as DMA agents or other processors in a hetereogenous architecture.  AXI may be approrpiate for an embedded processor attachment or as an intermediate interconnect for peripherals that initiate their own transactions.
 
-### AXI Channel Architecture
+| ![AXI Diagram](img/axi.png) |
+ | :--: |
+ | *Example System using AXI, from: What is AMBA?, https://www.youtube.com/watch?v=CZlDTQzOfq4* |
 
-![AXI Read Channel Diagram](img/axi-read-channel.png)
-(Diagram from AMBA AXI and ACE Protocol Specification)
 
-![AXI Write Channel Diagram](img/axi-write-channel.png)
-(Diagram from AMBA AXI and ACE Protocol Specification)
+### AXI4 Transaction Attributes
 
-#### AXI4 Attributes
+It's worth taking a moment to study the transaction attributes for AXI.  Any initiator of a transaction drives attributes that describe the treatment of the transaction for the purposes of ordering, bufferring, caching and protection.  While this is only an interconnect specification, these attributes align with the ARMv7 architecture memory model definitions.
 
-**AxCACHE**
-* Non-Cacheable
-  * Device
-    * No merging+prefetching, no early ack
-  * Normal Non-bufferable
-    * Merging+prefetching OK, no early ack
-  * Normal Bufferable
-    * Merging+prefetching OK, early ack OK
-* Cacheable
-  * Write-Through / Write-Back
-  * No-Allocate / Read-Allocate / Write-Allocate
+The **AxCACHE** signals determine the ordering, buffering and cacheability treatment for the transaction.  We divide these into cacheable and non-cacheable categories and then subidivde based on the buffering and ordering treatments.
 
-**AxPROT**
-* Privileged or Unprivileged
-* Secure or Non-Secure
-  * Used for TrustZone
-* Instruction or Data
+| Cacheability  | Type                   | Early Ack? | Mergeable?  | Prefetchable? | Example                        |
+| ------------- | ---------------------- | ---------- | ----------- | ------------- | ------------------------------ |
+| Non-Cacheable | Device Non-Bufferable  | No         | No          | No            | Strongly Ordered MMIO Register |
+| Non-Cacheable | Device Bufferable      | Yes        | No          | No            | Weakly Ordered MMIO Register   |
+| Non-Cacheable | Normal Non-Bufferable  | No         | Yes         | No            | Strongly Ordered Shared Mem    |
+| Non-Cacheable | Normal Bufferable      | Yes        | Yes         | Yes           | Weakly Ordered Shared Mem      |
+| Cacheable     | Write-through + NA     | Yes        | Yes         | Yes           | Framebuffer or Other DMA Buf   |
+| Cacheable     | Write-through + RA     | Yes        | Yes         | Yes           | Framebuffer or Other DMA Buf   |
+| Cacheable     | Write-through + WA     | Yes        | Yes         | Yes           | Framebuffer or Other DMA Buf   |
+| Cacheable     | Write-through + RWA    | Yes        | Yes         | Yes           | Framebuffer or Other DMA Buf   |
+| Cacheable     | Write-back + NA        | Yes        | Yes         | Yes           | Main memory                    | 
+| Cacheable     | Write-back + RA        | Yes        | Yes         | Yes           | Main memory                    |
+| Cacheable     | Write-back + WA        | Yes        | Yes         | Yes           | Main memory                    |
+| Cacheable     | Write-back + RWA       | Yes        | Yes         | Yes           | Main memory                    |
+----
+
+Allocation Hints:
+* NA - no allocate
+* RA - read allocate
+* WA - write allocate
+* RWA read & write allocate
+
+As we can see the transaction attributes are expressive as it pertains to the treatment of the transaction.
 
 
 ## ACE - AXI Coherency Extensions
 
-![ACE Diagram](img/ace.png)
-(from ARM CoreLink CCI-400 TRM)
+The first time we see coherency support in the series of AMBA specification is ACE, AXI Coherency Extensions.  Why do we focus on ACE when the goal is to learn CHI?  The concepts introduced in ACE continue on into CHI and as a learning vehicle it's simpler to learn in the context of ACE than will the full complexity of the latest CHI specfication.
 
-* Fully cache-coherent
-* Adds snoop channels
-* Distributed Virtual Memory
-* Barriers
-* ACE-Lite: one-way coherency
-  * can snoop but cannot be snooped
+It's interesting that coherency support did not require a replacement of AXI but simply could be layered on top of AXI.  The way this is accomplished is by adding additional signals (DOMAIN, SNOOP, and BAR) alongside the standard AXI ones to apply additional attributes each transaction request.  In addition to added signal for transaction attributes an additional SNOOP channel is defined to allow the interconnect to send snoop and cache management reqeusts into requesters.
 
 
-![ACE Cache States Diagram](img/ace-cache-states.png)
-(Diagram from AMBA AXI and ACE Protocol Specification)
+| ![ACE Diagram](img/ace.png) |
+ | :--: |
+ | *Example System using ACE, from ARM CoreLink CCI-400 TRM* |
+
+
+With ACE we can now build a system where caches can be snooped and invalidated enabling multiprocessing with shared memory (full coherency).  A subset of ACE called ACE-Lite is defined as well to enable coherency from IO devices initiating transactions that are expected to snoop processor caches but the IO devices themselves do not have any snoopable caches of their own (IO coherency, or one-way coherency).
+
+In addition to all of the cache coherency goodness we see other concepts necessary for performant multiprocessing emerge.
+
+ACE defines a set of transactions to enable Distributed Virtual Memory, or DVM.  While this sounds fancy DVM messages are required to enable efficient invalidations of virtual memory addresses across multiprocessors, namely TLB invalidates (after pagetable updates) and instruction cache invalidation (code loading or JITters).
+
+ACE also defines a set of barrier messages to enable synchronization between weak/relaxed ordered operations.
+
+
+### ACE/CHI Cache States
+
+ACE and CHI employ a cache state model that allows MOESI style coherence but using entirely different terminology.  Fortuantely the terminology is more concise than MOESI so it's easier to reason about the meaning.
+
+
+| ![ACE Cache States Diagram](img/ace-cache-states.png) |
+ | :--: |
+ | *ACE Cache States, from AMBA AXI and ACE Protocol Specification* |
+
+
+The cache states are as follows:
 
 ---
 * Invalid: Cache line not present in cache
@@ -121,10 +128,16 @@ This project examines the CHI specification, following the evolution of AMBA int
 * Dirty: This cache is responsible for updating main memory
 ---
 
-semantics similar to MOESI
 
-### ACE Transactions from Processor to Interconnect (Read/Write Requests)
+### ACE/CHI Transactions
 
+Where complexity really starts to emerge are in the various transaction types.  These transactions encompass the desired treatment of the data as far as whether caches should be accessed at all (NoSnoop), what state the initiator's caches will end up in, and the expected state of the target caches.  There are also transactions that are used for programmatic cache maintenance (e.g. "please flush these addresses to memory") and even transactions that are intended to provide visiblity to upstream snoop filters (Evict).
+
+The *intent* of these transactions can be difficult to find - for example a ReadShared is used for a Read but a ReadUnique or MakeUnique is used to prepare for a write!
+
+To help manage this complexity it's useful to map the transaction types to typical use cases as shown below.
+
+#### ACE/CHI Transactions from Processor to Interconnect (Read/Write Requests)
 | Transaction | Meaning | Typical Use |
 | --- | --- | --- |
 | ReadNoSnoop | Read, with no snooping/coherency with other nodes | Non-coherent memory or mmio access |
@@ -145,9 +158,9 @@ semantics similar to MOESI
 | WriteEvict | Write clean cache line to lower cache level | Eviction of clean cache line down the hierarchy |
 
 
+Similary we can map transactions arrive at a coherent node on the Snoop channel.
 
-
-### ACE Transactions from Interconnect to Processor (Snoop Requests)
+### ACE/CHI Transactions from Interconnect to Processor (Snoop Requests)
 | Transaction | Meaning | Typical Use |
 | --- | --- | --- |
 | ReadOnce | Snoop read, initiator will not cache | Enable the snooped processor to retain cacheline in unique state |
@@ -162,6 +175,8 @@ semantics similar to MOESI
 
 ### ACE Coherency Responses
 
+Although the transaction types indicate the initiator's desired end state, that's not the full story.  The responder also has a say on the final state and can choose to pass ownership for writing back data or can indicate if the snooped is in a shared state.
+
 **PassDirty**
 The node receiving this response gains responsibility for writing back the modified cacheline
 If set, resulting state will be UniqueDirty or SharedDirty
@@ -170,10 +185,25 @@ If set, resulting state will be UniqueDirty or SharedDirty
 Indicates the returned data may be held in another cache
 If set, resulting state will be SharedClean or SharedDirty
 
-### ACE Snoop Filter
+Some interesting scenarios can arise here - if a requester wants a clean line and a responsder passes a dirty response then it's the interconnect's job to resolve this situation by writing data back to main memory *and* providing a clean response back to the requester.
 
-![ACE Snoop Filter Diagram](img/ace-snoop-filter.png)
-(from ARM CoreLink CCI-5500 TRM)
+### ACE/CHI Snoop Filter
+
+If the interconnect were to send snoop requests to every cache in the system we would see performance degradation due to excessive snoop traffic on the interconnect as well as excessive cache lookups as they check for matching addresses.
+
+In computer architecture classes we learn about the directory methodology for coherence, where a directory (or set of directories) track the node IDs on a per-cache block basis.  In essence an ACE/CHI Snoop Filter is conceptually the same, except we treat the Snoop Filter more like a cache than a directory.  The snoop filter will allocate an entry for any block address in an upstream cache so it can decide whether to forward coherency requests upstream or to ignore them.  In this case an entry simply consists of an address correpsonding to the cache block - so it's equivalent a cache itself with a tag and a valid bit but no data.
+
+| ![ACE Snoop Filter Diagram](img/ace-snoop-filter.png) |
+| :--: |
+| *ACE System Using a Snoop Filter, from ARM CoreLink CCI-550 TRM* |
+
+Ideally, the Snoop Filter is configured with enough entries to track the state of all "upstream" cache blocks.  This means that snoop filter sizing must take into account all attached caches for optimal performance.
+
+For example the ARM CCI 500 TRM advises: 
+
+> Arm recommends that you configure the snoop filter directory to be 0.75-1 times the total size of exclusive caches of > ?> processors that are attached to the CCI-500. The snoop filter is 8-way set associative and, to minimize conflicts, stores > twice as many tags as the configured size.
+
+So what happens if a snoop filter runs out of space?  It's not acceptable for the snoop filter to be out of sync from upstream caches as it would break the coherence protocol so instead the snoop filter itself will initiate an eviction from an upstream cache, called a back-invalidation.  This is something important to consider when sizing resources in a memory hierarchy as any benefit from larger caches on your processor can be negated by insufficient snoop filter sizing!
 
 * Reduce coherency broadcasts
 * Track tags from upstream caches
