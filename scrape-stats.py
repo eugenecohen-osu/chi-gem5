@@ -225,13 +225,18 @@ def make_plot(plot, outdir):
         #print(f'sp_pos is {sp_pos}')
         ax = plt.subplot(sp_pos, title=sp['title'])
         plt.bar(sp['names'], sp['values'])
+        logscale=False
         if 'y-scale' in sp:
+            logscale = True if sp['y-scale'] == 'log' else False
             ax.set_yscale(sp['y-scale'])
         if 'x-scale' in sp:
             ax.set_xscale(sp['x-scale'])
         if 'y-label' in sp:
             plt.ylabel(sp['y-label'])
+        #ax.ticklabel_format(style='plain')
+        if not logscale: ax.get_yaxis().get_major_formatter().set_scientific(False)
         plt.setp(ax.get_xticklabels(), rotation=30, horizontalalignment='right')
+        
         col_idx=col_idx+1
     
     plt.suptitle(plot['title'])
