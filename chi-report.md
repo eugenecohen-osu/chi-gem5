@@ -661,3 +661,36 @@ We found that with some effort gem5 can be configured for either Full System or 
 
 We developed a test program that generates coherency traffic and was able to illustrate through test workloads of varying core counts and shared data placement that we could capture coherency traffic and reason about differences in the data.
 
+
+# Repo
+
+The work for this project can be found at https://github.com/eugenecohen-osu/chi-gem5 which is a fork of gem5 with additional work on the chi branch.  The key steps to reproduce this is:
+
+```
+./docker-run build-riscv-chi.sh
+./docker-run run-all.sh
+```
+
+Results for runs will appear in directory starting with the `out_` prefix with graphs generated in the `png` subdirecdtory.
+
+# References
+
+* AMBA APB Protocol Specification: https://developer.arm.com/documentation/ihi0024/latest/
+
+* AMBA AHB Protocol Specification: https://developer.arm.com/documentation/ihi0033/latest/
+
+* AMBA AXI and ACE Protocol Specification: https://documentation-service.arm.com/static/
+5f915b62f86e16515cdc3b1c
+
+* AMBA CHI Architecture Specification: https://developer.arm.com/documentation/ihi0050/latest/
+
+* What is AMBA?: https://www.youtube.com/watch?v=CZlDTQzOfq4
+
+* ARM® CoreLink CCI-400 Cache Coherent Interconnect: https://documentation-service.arm.com/static/5e8f15d57100066a414f73ce
+
+* Arm CoreLink CCI-550 Cache Coherent Interconnect: https://documentation-service.arm.com/static/5e7dd450cbfe76649ba52b0c
+
+* gem5 git: https://github.com/gem5/gem5
+
+* gem5 documentation: https://www.gem5.org/documentation/
+
