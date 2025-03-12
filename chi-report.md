@@ -671,7 +671,7 @@ The work for this project can be found at https://github.com/eugenecohen-osu/chi
 ./docker-run run-all.sh
 ```
 
-Results for runs will appear in directory starting with the `out_` prefix with graphs generated in the `png` subdirecdtory.
+Results for runs will appear in directory starting with the `out_` prefix with graphs generated in the `png` subdirectory.
 
 # References
 
