@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# make sure to execute this under docker, i.e.:
+#  ./docker-run ./b.sh
+
 # build the m5term utility
 pushd util/term
 make
