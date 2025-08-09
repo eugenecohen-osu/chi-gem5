@@ -1,0 +1,22 @@
+* When we debug we run natively on the host machine, not in docker.  These are the requirements to execute gem5:
+
+sudo apt -y install \
+    zlib1g \
+    zlib1g-dev \
+    libprotobuf-dev \
+    protobuf-compiler \
+    libprotoc-dev \
+    libgoogle-perftools-dev \
+    libboost-all-dev \
+    libhdf5-serial-dev \
+    python3-pydot \
+    python3-venv \
+    python3-tk \
+    mypy \
+    m4 \
+    libcapstone-dev \
+    libpng-dev \
+    libelf-dev \
+    pkg-config \
+    wget \
+    jq
