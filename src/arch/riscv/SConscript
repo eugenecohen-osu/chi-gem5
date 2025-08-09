@@ -104,6 +104,11 @@ SimObject(
     tags=['riscv isa']
 )
 SimObject(
+    'RiscvHMMU.py',
+    sim_objects=['RiscvHMMU'],
+    tags=['riscv isa']
+)
+SimObject(
     'RiscvSemihosting.py',
     sim_objects=['RiscvSemihosting'],
     tags=['riscv isa']
@@ -120,6 +125,7 @@ SimObject(
 )
 
 SimObject('RiscvCPU.py', sim_objects=[], tags=['riscv isa'])
+SimObject('RiscvHmmuCPU.py', sim_objects=[], tags=['riscv isa'])
 
 DebugFlag('RiscvMisc', tags=['riscv isa'])
 DebugFlag('PMP', tags=['riscv isa'])

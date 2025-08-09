@@ -178,6 +178,10 @@ class CPUList(ObjectList):
             cls, m5.objects.RiscvCPU
         ):
             return ISA.RISCV
+        elif hasattr(m5.objects, "RiscvHmmuCPU") and issubclass(
+            cls, m5.objects.RiscvHmmuCPU
+        ):
+            return ISA.RISCV
         else:
             raise ValueError("Unable to determine CPU ISA.")
 

@@ -35,34 +35,23 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __ARCH_RISCV_MMU_HH__
-#define __ARCH_RISCV_MMU_HH__
+#ifndef __ARCH_RISCV_HMMU_HH__
+#define __ARCH_RISCV_HMMU_HH__
 
-#include "arch/generic/mmu.hh"
-#include "arch/riscv/isa.hh"
-#include "arch/riscv/page_size.hh"
-#include "arch/riscv/pma_checker.hh"
-#include "arch/riscv/pmp.hh"
-#include "arch/riscv/tlb.hh"
-
-#include "params/RiscvMMU.hh"
+#include "arch/riscv/mmu.hh"
 
 namespace gem5
 {
 
 namespace RiscvISA {
 
-class MMU : public BaseMMU
+class HMMU : public MMU
 {
   public:
     BasePMAChecker *pma;
 
-    MMU(const RiscvMMUParams &p)
-      : BaseMMU(p), pma(p.pma_checker)
-    {}
-
-    MMU(const BaseMMUParams &bp, BasePMAChecker * pma_checker)
-      : BaseMMU(bp), pma(pma_checker)
+    HMMU(const RiscvHMMUParams &p)
+      : MMU(p, p.pma_checker), pma(p.pma_checker)
     {}
 
     void
@@ -105,7 +94,7 @@ class MMU : public BaseMMU
     void
     takeOverFrom(BaseMMU *old_mmu) override
     {
-      MMU *ommu = dynamic_cast<MMU*>(old_mmu);
+      HMMU *ommu = dynamic_cast<HMMU*>(old_mmu);
       BaseMMU::takeOverFrom(ommu);
       pma->takeOverFrom(ommu->pma);
 
@@ -138,4 +127,4 @@ class MMU : public BaseMMU
 } // namespace RiscvISA
 } // namespace gem5
 
-#endif  // __ARCH_RISCV_MMU_HH__
+#endif  // __ARCH_RISCV_HMMU_HH__

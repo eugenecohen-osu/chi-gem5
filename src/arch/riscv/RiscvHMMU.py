@@ -1,4 +1,17 @@
-# Copyright 2021 Google, Inc.
+# -*- mode:python -*-
+
+# Copyright (c) 2025 Oregon State University
+# Copyright (c) 2020 ARM Limited
+# All rights reserved.
+#
+# The license below extends only to copyright in the software and shall
+# not be construed as granting a license to any other intellectual
+# property including but not limited to intellectual property relating
+# to a hardware implementation of the functionality of the software
+# licensed hereunder.  You may use the software subject to the license
+# terms below provided that you ensure that this notice is replicated
+# unmodified and in its entirety in all distributions of the software,
+# modified or unmodified, in source code or in binary form.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
@@ -23,31 +36,27 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import m5.defines
+from m5.objects.BaseMMU import BaseMMU
+from m5.objects.PMAChecker import PMAChecker
+from m5.objects.PMP import PMP
+from m5.objects.RiscvTLB import RiscvTLB
+from m5.params import *
 
-arch_vars = [
-    "USE_ARM_ISA",
-    "USE_MIPS_ISA",
-    "USE_POWER_ISA",
-    "USE_RISCV_ISA",
-    "USE_SPARC_ISA",
-    "USE_X86_ISA",
-]
 
-enabled = list(filter(lambda var: m5.defines.buildEnv[var], arch_vars))
+class RiscvHMMU(BaseMMU):
+    type = "RiscvHMMU"
+    cxx_class = "gem5::RiscvISA::HMMU"
+    cxx_header = "arch/riscv/hmmu.hh"
 
-if len(enabled) == 1:
-    arch = enabled[0]
-    if arch == "USE_ARM_ISA":
-        from m5.objects.ArmCPU import ArmTimingSimpleCPU as TimingSimpleCPU
-    elif arch == "USE_MIPS_ISA":
-        from m5.objects.MipsCPU import MipsTimingSimpleCPU as TimingSimpleCPU
-    elif arch == "USE_POWER_ISA":
-        from m5.objects.PowerCPU import PowerTimingSimpleCPU as TimingSimpleCPU
-    elif arch == "USE_RISCV_ISA":
-        from m5.objects.RiscvCPU import RiscvTimingSimpleCPU as TimingSimpleCPU
-        from m5.objects.RiscvHmmuCPU import RiscvHmmuTimingSimpleCPU
-    elif arch == "USE_SPARC_ISA":
-        from m5.objects.SparcCPU import SparcTimingSimpleCPU as TimingSimpleCPU
-    elif arch == "USE_X86_ISA":
-        from m5.objects.X86CPU import X86TimingSimpleCPU as TimingSimpleCPU
+    itb = RiscvTLB(entry_type="instruction")
+    dtb = RiscvTLB(entry_type="data")
+    pma_checker = Param.BasePMAChecker(PMAChecker(), "PMA Checker")
+    pmp = Param.PMP(PMP(), "Physical Memory Protection Unit")
+
+    @classmethod
+    def walkerPorts(cls):
+        return ["mmu.itb.walker.port", "mmu.dtb.walker.port"]
+
+    def connectWalkerPorts(self, iport, dport):
+        self.itb.walker.port = iport
+        self.dtb.walker.port = dport

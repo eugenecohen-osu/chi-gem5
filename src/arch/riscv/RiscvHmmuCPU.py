@@ -1,3 +1,4 @@
+# Copyright (c) 2025 Oregon State University
 # Copyright 2021 Google, Inc.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -23,31 +24,39 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import m5.defines
+from m5.objects.BaseAtomicSimpleCPU import BaseAtomicSimpleCPU
+from m5.objects.BaseMinorCPU import BaseMinorCPU
+from m5.objects.BaseNonCachingSimpleCPU import BaseNonCachingSimpleCPU
+from m5.objects.BaseO3CPU import BaseO3CPU
+from m5.objects.BaseTimingSimpleCPU import BaseTimingSimpleCPU
+from m5.objects.RiscvDecoder import RiscvDecoder
+from m5.objects.RiscvInterrupts import RiscvInterrupts
+from m5.objects.RiscvISA import RiscvISA
+from m5.objects.RiscvHMMU import RiscvHMMU
 
-arch_vars = [
-    "USE_ARM_ISA",
-    "USE_MIPS_ISA",
-    "USE_POWER_ISA",
-    "USE_RISCV_ISA",
-    "USE_SPARC_ISA",
-    "USE_X86_ISA",
-]
 
-enabled = list(filter(lambda var: m5.defines.buildEnv[var], arch_vars))
+class RiscvHmmuCPU:
+    ArchDecoder = RiscvDecoder
+    ArchMMU = RiscvHMMU
+    ArchInterrupts = RiscvInterrupts
+    ArchISA = RiscvISA
 
-if len(enabled) == 1:
-    arch = enabled[0]
-    if arch == "USE_ARM_ISA":
-        from m5.objects.ArmCPU import ArmTimingSimpleCPU as TimingSimpleCPU
-    elif arch == "USE_MIPS_ISA":
-        from m5.objects.MipsCPU import MipsTimingSimpleCPU as TimingSimpleCPU
-    elif arch == "USE_POWER_ISA":
-        from m5.objects.PowerCPU import PowerTimingSimpleCPU as TimingSimpleCPU
-    elif arch == "USE_RISCV_ISA":
-        from m5.objects.RiscvCPU import RiscvTimingSimpleCPU as TimingSimpleCPU
-        from m5.objects.RiscvHmmuCPU import RiscvHmmuTimingSimpleCPU
-    elif arch == "USE_SPARC_ISA":
-        from m5.objects.SparcCPU import SparcTimingSimpleCPU as TimingSimpleCPU
-    elif arch == "USE_X86_ISA":
-        from m5.objects.X86CPU import X86TimingSimpleCPU as TimingSimpleCPU
+
+class RiscvHmmuAtomicSimpleCPU(BaseAtomicSimpleCPU, RiscvHmmuCPU):
+    mmu = RiscvHMMU()
+
+
+class RiscvHmmuNonCachingSimpleCPU(BaseNonCachingSimpleCPU, RiscvHmmuCPU):
+    mmu = RiscvHMMU()
+
+
+class RiscvHmmuTimingSimpleCPU(BaseTimingSimpleCPU, RiscvHmmuCPU):
+    mmu = RiscvHMMU()
+
+
+class RiscvHmmuO3CPU(BaseO3CPU, RiscvHmmuCPU):
+    mmu = RiscvHMMU()
+
+
+class RiscvHmmuMinorCPU(BaseMinorCPU, RiscvHmmuCPU):
+    mmu = RiscvHMMU()

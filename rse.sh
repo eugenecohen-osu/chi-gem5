@@ -2,11 +2,13 @@
 
 DOCKER_PREFIX=./docker-run
 
-CPU_TYPE=RiscvTimingSimpleCPU
+CPU_TYPE=RiscvHmmuTimingSimpleCPU
 NUM_CORES=1
 OUT_DIR=out
 
 mkdir -p $OUT_DIR
+
+#$DOCKER_PREFIX ./build/RISCV/gem5.opt --outdir $OUT_DIR configs/deprecated/example/se.py --list-cpu-types
 
 $DOCKER_PREFIX ./build/RISCV/gem5.opt --outdir $OUT_DIR configs/deprecated/example/se.py --ruby \
     --cpu-type=$CPU_TYPE \
