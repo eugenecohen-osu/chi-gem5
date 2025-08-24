@@ -1,0 +1,16 @@
+# add copyright
+
+Import('*')
+
+if not env['CONF']['USE_RISCV_ISA']:
+    Return()
+
+#if not env['CONF']['USE_RISCV_HMMU']:
+#    Return()
+
+# Controllers
+SimObject('alaska.py', sim_objects=['AlaskaDriver'])
+
+Source('alaska_driver.cc')
+
+DebugFlag('AlaskaDriver')
