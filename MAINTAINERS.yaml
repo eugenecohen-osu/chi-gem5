@@ -132,6 +132,11 @@ dev-arm:
         - Giacomo Travaglini <giacomo.travaglini@arm.com>
         - Andreas Sandberg <andreas.sandberg@arm.com>
 
+dev-alaska:
+    status: maintained
+    maintainers:
+        - Eugene Cohen <coheneu@oregonstate.edu>
+
 doc:
     status: orphaned
 
