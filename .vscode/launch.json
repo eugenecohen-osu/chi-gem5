@@ -12,7 +12,7 @@
             "program": "${workspaceFolder}/build/RISCV/gem5.opt",
             "args": [
                 "--outdir", "out",
-                "--debug-flags=MMU,PageTableWalker,TLB,TLBVerbose",
+                "--debug-flags=MMU,PageTableWalker,TLB,TLBVerbose,SyscallBase,SyscallVerbose,ExecAll,Registers",
                 "configs/deprecated/example/se.py",
                 "--ruby",
                 "--cpu-type=RiscvHmmuTimingSimpleCPU",
@@ -20,9 +20,122 @@
                 "--num-cpus=1",
                 "--num-dirs=2",
                 "--num-l3caches=2",
-                "--cmd=tests/test-progs/hello/bin/riscv/linux/hello"
+                "--cmd=tests/test-progs/hello/bin/riscv/linux/hello",
+                //">", "debug.txt"
             ],
-            "stopAtEntry": true,
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "(gdb) Launch SE min_halloc RiscvHmmuTimingSimpleCPU",
+            "type": "cppdbg",
+            "request": "launch",
+            "targetArchitecture": "arm64",
+            "program": "${workspaceFolder}/build/RISCV/gem5.opt",
+            "args": [
+                "--outdir", "out",
+                //"--debug-flags=MMU,PageTableWalker,TLB,TLBVerbose,SyscallBase,SyscallVerbose,ExecAll,Registers",
+                //"--debug-flags=SyscallBase,SyscallVerbose,ExecAll",
+                "--debug-flags=SyscallBase,SyscallVerbose",
+                "configs/deprecated/example/se.py",
+                "--ruby",
+                "--cpu-type=RiscvHmmuTimingSimpleCPU",
+                "--topology=Crossbar",
+                "--num-cpus=1",
+                "--num-dirs=2",
+                "--num-l3caches=2",
+                "--drivers", "AlaskaDriver=alaska",
+                "--cmd=tests/test-progs/min_halloc/bin/riscv/linux/min_halloc",
+                //">", "debug.txt"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "(gdb) Launch riscv-ubuntu-run.py",
+            "type": "cppdbg",
+            "request": "launch",
+            "targetArchitecture": "arm64",
+            "program": "${workspaceFolder}/build/RISCV/gem5.opt",
+            "args": [
+                "--outdir", "out",
+                //"--debug-flags=MMU,PageTableWalker,TLB,TLBVerbose,SyscallBase,SyscallVerbose,ExecAll,Registers",
+                "configs/example/gem5_library/riscv-ubuntu-run.py",
+                //"--caches",
+                // "--l1i_size=16kB",
+                // "--l1d_size=16kB",
+                // "--l2cache",
+                // "--l2_size=256kB",
+                // "--mem-type=DDR4_2400_8x8",
+                // "--mem-size=3GB",
+                // "--cpu-type=RiscvHmmuTimingSimpleCPU",
+                // "--kernel=img/bootloader-vmlinux-5.10",
+                // "--disk-image=img/ubuntu-24.04.2-preinstalled-server-riscv64+unmatched.img",
+                //"--command-line=\\\"console=ttyS0\\\"",
+                //">", "debug.txt"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                {
+                    "name" : "GEM5_RESOURCE_DIR",
+                    "value" : "${workspaceFolder}/resources"
+                }
+            ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "(gdb) Launch FS linux RiscvHmmuTimingSimpleCPU",
+            "type": "cppdbg",
+            "request": "launch",
+            "targetArchitecture": "arm64",
+            "program": "${workspaceFolder}/build/RISCV/gem5.opt",
+            "args": [
+                "--outdir", "out",
+                //"--debug-flags=MMU,PageTableWalker,TLB,TLBVerbose,SyscallBase,SyscallVerbose,ExecAll,Registers",
+                "configs/example/riscv/fs_linux.py",
+                "--caches",
+                "--l1i_size=16kB",
+                "--l1d_size=16kB",
+                "--l2cache",
+                "--l2_size=256kB",
+                "--mem-type=DDR4_2400_8x8",
+                "--mem-size=3GB",
+                "--cpu-type=RiscvHmmuTimingSimpleCPU",
+                "--kernel=img/bootloader-vmlinux-5.10",
+                "--disk-image=img/ubuntu-24.04.2-preinstalled-server-riscv64+unmatched.img",
+                //"--command-line=\\\"console=ttyS0\\\"",
+                //">", "debug.txt"
+            ],
+            "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
