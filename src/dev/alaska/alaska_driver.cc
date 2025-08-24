@@ -18,7 +18,7 @@
 // #include "mem/se_translating_port_proxy.hh"
 // #include "mem/translating_port_proxy.hh"
 #include "params/AlaskaDriver.hh"
-#include "sim/full_system.hh"
+#include "arch/riscv/linux/linux.hh"
 #include "sim/process.hh"
 #include "sim/se_workload.hh"
 #include "sim/syscall_emul_buf.hh"
@@ -57,41 +57,19 @@ AlaskaDriver::mmap(ThreadContext *tc, Addr start, uint64_t length,
     auto mem_state = process->memState;
 
     
-    // Addr pg_off = offset >> PAGE_SHIFT;
-    // Addr mmap_type = pg_off & KFD_MMAP_TYPE_MASK;
-    // DPRINTF(GPUDriver, "amdkfd mmap (start: %p, length: 0x%x,"
-    //         "offset: 0x%x)\n", start, length, offset);
+    panic_if(!(tgt_flags & RiscvLinux64::TGT_MAP_FIXED),
+                     "alaska: only mmap with TGT_MAP_FIXED is supported");
 
-    // switch(mmap_type) {
-    //     case KFD_MMAP_TYPE_DOORBELL:
-    //         DPRINTF(GPUDriver, "amdkfd mmap type DOORBELL offset\n");
-    //         start = mem_state->extendMmap(length);
-    //         process->pTable->map(start, device->hsaPacketProc().pioAddr,
-    //                 length, false);
-    //         break;
-    //     case KFD_MMAP_TYPE_EVENTS:
-    //         DPRINTF(GPUDriver, "amdkfd mmap type EVENTS offset\n");
-    //         panic_if(start != 0,
-    //                  "Start address should be provided by KFD\n");
-    //         panic_if(length != 8 * KFD_SIGNAL_EVENT_LIMIT,
-    //                  "Requested length %d, expected length %d; length "
-    //                  "mismatch\n", length, 8* KFD_SIGNAL_EVENT_LIMIT);
-    //         /**
-    //          * We don't actually access these pages.  We just need to reserve
-    //          * some VA space.  See commit id 5ce8abce for details on how
-    //          * events are currently implemented.
-    //          */
-    //         if (!eventPage) {
-    //             eventPage = mem_state->extendMmap(length);
-    //             start = eventPage;
-    //         }
-    //         break;
-    //     default:
-    //         warn_once("Unrecognized kfd mmap type %llx\n", mmap_type);
-    //         break;
-    // }
-    start = 0;
 
+    DPRINTF(AlaskaDriver, "mmap 0x%x length 0x%x\n", start, length);
+
+    // if a previous region was mapped, unmap it
+    process->memState->unmapRegion(start, length);
+
+    // map in regular memory to service as the handle table
+    process->memState->mapRegion(start, length, "handle table", -1, offset);
+
+    // return the address passed in since this is a TGT_MAP_FIXED mapping
     return start;
 }
 
