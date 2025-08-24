@@ -1,4 +1,4 @@
-# Copyright (c) 2021 The Regents of the University of California
+# Copyright (c) 2021-2025 The Regents of the University of California
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,7 +26,7 @@
 
 """
 This script shows an example of running a full system RISCV Ubuntu boot
-simulation using the gem5 library. This simulation boots Ubuntu 20.04 using
+simulation using the gem5 library. This simulation boots Ubuntu 24.04 using
 2 TIMING CPU cores. The simulation ends when the startup is completed
 successfully.
 
@@ -34,33 +34,28 @@ Usage
 -----
 
 ```
-scons build/RISCV/gem5.opt
-./build/RISCV/gem5.opt \
-    configs/example/gem5_library/riscv-ubuntu-run.py
+scons build/ALL/gem5.opt
+./build/ALL/gem5.opt configs/example/gem5_library/riscv-ubuntu-run.py
 ```
 """
 
-import m5
-from m5.objects import Root
-
 from gem5.components.boards.riscv_board import RiscvBoard
-from gem5.components.memory import DualChannelDDR4_2400
-from gem5.components.processors.cpu_types import CPUTypes
-from gem5.components.processors.simple_processor import SimpleProcessor
-from gem5.isas import ISA
-from gem5.resources.resource import obtain_resource
-from gem5.simulate.exit_event import ExitEvent
-from gem5.simulate.simulator import Simulator
-from gem5.utils.requires import requires
-
-# This runs a check to ensure the gem5 binary is compiled for RISCV.
-
-requires(isa_required=ISA.RISCV)
 
 # With RISCV, we use simple caches.
 from gem5.components.cachehierarchies.classic.private_l1_private_l2_walk_cache_hierarchy import (
     PrivateL1PrivateL2WalkCacheHierarchy,
 )
+from gem5.components.memory import DualChannelDDR4_2400
+from gem5.components.processors.cpu_types import CPUTypes
+from gem5.components.processors.simple_processor import SimpleProcessor
+from gem5.isas import ISA
+from gem5.resources.resource import obtain_resource
+from gem5.simulate.exit_handler import (
+    ExitHandler,
+    KernelBootedExitHandler,
+)
+from gem5.simulate.simulator import Simulator
+from gem5.utils.override import overrides
 
 # Here we setup the parameters of the l1 and l2 caches.
 cache_hierarchy = PrivateL1PrivateL2WalkCacheHierarchy(
@@ -73,10 +68,7 @@ memory = DualChannelDDR4_2400(size="3GiB")
 
 # Here we setup the processor. We use a simple processor.
 processor = SimpleProcessor(
-    # temporarily modified num_cores to 1 instead of 2
-    cpu_type=CPUTypes.TIMING,
-    isa=ISA.RISCV,
-    num_cores=1,
+    cpu_type=CPUTypes.TIMING, isa=ISA.RISCV, num_cores=2
 )
 
 # Here we setup the board. The RiscvBoard allows for Full-System RISCV
@@ -88,11 +80,16 @@ board = RiscvBoard(
     cache_hierarchy=cache_hierarchy,
 )
 
-# Here we a full system workload: "riscv-ubuntu-20.04-boot" which boots
-# Ubuntu 20.04. Once the system successfully boots it encounters an `m5_exit`
-# instruction which stops the simulation. When the simulation has ended you may
-# inspect `m5out/system.pc.com_1.device` to see the stdout.
-workload = obtain_resource("riscv-ubuntu-24.04-boot", resource_version="1.0.0")
+kernel_args = board.get_default_kernel_args()
+print("override init to /bin/bash")
+kernel_args.append("init=/bin/bash")
+
+# Here we a full system workload: "riscv-ubuntu-24.04-boot" which boots
+# Ubuntu 24.04. Once the system successfully boots it encounters an
+# `gem5-bridge hypercall 3` command which stops the simulation. When the
+# simulation has ended you may inspect `m5out/board.platform.terminal` to see
+# the simulated system's stdout.
+workload=obtain_resource("riscv-ubuntu-24.04-boot", resource_version="2.0.0")
 kernel_args = board.get_default_kernel_args()
 print("override init to /bin/bash")
 kernel_args.append("init=/bin/bash")
@@ -100,26 +97,44 @@ print(f"kernel_args: {kernel_args}")
 workload.set_parameter("kernel_args", kernel_args)
 board.set_workload(workload)
 
-
-def exit_event_handler():
-    print("First exit: kernel booted")
-    yield False  # gem5 is now executing systemd startup
-    print("Second exit: Started `after_boot.sh` script")
-    # The after_boot.sh script is executed after the kernel and systemd have
-    # booted.
-    yield False  # gem5 is now executing the `after_boot.sh` script
-    print("Third exit: Finished `after_boot.sh` script")
-    # The after_boot.sh script will run a script if it is passed via
-    # m5 readfile. This is the last exit event before the simulation exits.
-    yield True
+# Examples of how you can override the default exit handler behaviors.
+# Exit handlers don't have to be specified in the config script if you don't
+# want to modify/override their default behaviors.
 
 
-simulator = Simulator(
-    board=board,
-    on_exit_event={
-        # Here we want override the default behavior for the first m5 exit
-        # exit event.
-        ExitEvent.EXIT: exit_event_handler()
-    },
-)
+# You can inherit from either the class that handles a certain hypercall by
+# default, or inherit directly from ExitHandler and specify a hypercall number.
+# See src/python/gem5/simulate/exit_handler.py for more information on which
+# behaviors map to which hypercalls, and what the default behaviors are.
+class CustomKernelBootedExitHandler(KernelBootedExitHandler):
+    @overrides(KernelBootedExitHandler)
+    def _process(self, simulator: "Simulator") -> None:
+        print("First exit: kernel booted")
+
+    @overrides(KernelBootedExitHandler)
+    def _exit_simulation(self) -> bool:
+        return False
+
+
+class CustomAfterBootExitHandler(ExitHandler, hypercall_num=2):
+    @overrides(ExitHandler)
+    def _process(self, simulator: "Simulator") -> None:
+        print("Second exit: Started `after_boot.sh` script")
+
+    @overrides(ExitHandler)
+    def _exit_simulation(self) -> bool:
+        return False
+
+
+class AfterBootScriptExitHandler(ExitHandler, hypercall_num=3):
+    @overrides(ExitHandler)
+    def _process(self, simulator: "Simulator") -> None:
+        print(f"Third exit: {self.get_handler_description()}")
+
+    @overrides(ExitHandler)
+    def _exit_simulation(self) -> bool:
+        return True
+
+
+simulator = Simulator(board=board)
 simulator.run()
