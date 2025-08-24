@@ -766,6 +766,16 @@ def addSEOptions(parser):
         action="store_true",
         help="Wait for remote GDB to connect.",
     )
+    parser.add_argument(
+        "--drivers",
+        action="append",
+        type=str,
+        default=[],
+        help="A collection of one or more emulated drivers "
+        "to be used in syscall emulation."
+        "Usage: gem5.opt [...] --drivers <driver class>=<device filename>"
+        "e.g.: gem5.opt [...] --drivers AlaskaDriver=alaska"
+    )
 
 
 def addFSOptions(parser):

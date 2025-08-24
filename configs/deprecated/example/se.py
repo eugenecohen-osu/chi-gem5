@@ -80,6 +80,7 @@ def get_processes(args):
     outputs = []
     errouts = []
     pargs = []
+    driver_list = []
 
     workloads = args.cmd.split(";")
     if args.input != "":
@@ -91,12 +92,26 @@ def get_processes(args):
     if args.options != "":
         pargs = args.options.split(";")
 
+    if args.drivers:
+        for driver_str in args.drivers:
+            if '=' not in driver_str:
+                raise ValueError(f'invalid driver string {driver_str}, must be in form <class>=<device>')
+            class_str, device_str = driver_str.split('=')
+            driver_class = getattr(m5.objects, class_str, None)
+            if driver_class:
+                print (f'SE: adding driver {class_str} with device {device_str}')
+                
+                driver_list.append( driver_class(filename=device_str) )
+            else:
+                raise TypeError(f'driver {driver_str} not found')
+
     idx = 0
     for wrkld in workloads:
         process = Process(pid=100 + idx)
         process.executable = wrkld
         process.cwd = os.getcwd()
         process.gid = os.getgid()
+        process.drivers.extend(driver_list)
 
         if args.env:
             with open(args.env) as f:
