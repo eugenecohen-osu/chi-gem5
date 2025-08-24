@@ -16,4 +16,6 @@ $DOCKER_PREFIX ./build/RISCV/gem5.opt --outdir $OUT_DIR configs/deprecated/examp
     --num-cpus=$NUM_CORES \
     --num-dirs=2 \
     --num-l3caches=2 \
-    --cmd=tests/test-progs/hello/bin/riscv/linux/hello
+    --drivers AlaskaDriver=alaska \
+    --cmd=tests/test-progs/min_halloc/bin/riscv/linux/min_halloc
+
