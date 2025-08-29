@@ -195,6 +195,13 @@ enum MiscRegIndex
     MISCREG_FFLAGS,
     MISCREG_FRM,
 
+    // Alaska Start
+    MISCREG_HTBASE,
+    MISCREG_HTDUMP,
+    MISCREG_HTINVAL,
+    MISCREG_HTBOUND,
+    // Alaska End
+
     MISCREG_VSTART,
     MISCREG_VXSAT,
     MISCREG_VXRM,
@@ -306,6 +313,12 @@ enum CSRIndex
     CSR_FFLAGS = 0x001,
     CSR_FRM = 0x002,
     CSR_FCSR = 0x003,
+    // alaska begin
+    CSR_HTBASE = 0xC2,
+    CSR_HTDUMP = 0xC3,
+    CSR_HTINVAL = 0xC4,
+    CSR_HTBOUND = 0xC5,
+    // alaska end
     CSR_CYCLE = 0xC00,
     CSR_TIME = 0xC01,
     CSR_INSTRET = 0xC02,
@@ -609,6 +622,14 @@ const std::unordered_map<int, CSRMetadata> CSRData = {
         {"frm", MISCREG_FRM, rvTypeFlags(RV64, RV32), isaExtsFlags('f')}},
     {CSR_FCSR,
         {"fcsr", MISCREG_FFLAGS, rvTypeFlags(RV64, RV32), isaExtsFlags('f')}},
+    {CSR_HTBASE,
+        {"htbase", MISCREG_HTBASE, rvTypeFlags(RV64), isaExtsFlags()}},
+    {CSR_HTDUMP,
+        {"htdump", MISCREG_HTDUMP, rvTypeFlags(RV64), isaExtsFlags()}},
+    {CSR_HTINVAL,
+        {"htinval", MISCREG_HTINVAL, rvTypeFlags(RV64), isaExtsFlags()}},
+    {CSR_HTBOUND,
+        {"htbound", MISCREG_HTBOUND, rvTypeFlags(RV64), isaExtsFlags()}},
     {CSR_CYCLE,
         {"cycle", MISCREG_CYCLE, rvTypeFlags(RV64, RV32), isaExtsFlags()}},
     {CSR_TIME,
