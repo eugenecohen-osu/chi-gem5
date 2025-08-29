@@ -108,6 +108,7 @@ SimObject(
     sim_objects=['RiscvHMMU'],
     tags=['riscv isa']
 )
+DebugFlag("RiscvHMMU", tags=['riscv isa'])
 SimObject(
     'RiscvSemihosting.py',
     sim_objects=['RiscvSemihosting'],

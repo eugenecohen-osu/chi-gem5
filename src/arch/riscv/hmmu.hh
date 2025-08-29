@@ -39,6 +39,7 @@
 #define __ARCH_RISCV_HMMU_HH__
 
 #include "arch/riscv/mmu.hh"
+#include "debug/RiscvHMMU.hh"
 
 namespace gem5
 {
