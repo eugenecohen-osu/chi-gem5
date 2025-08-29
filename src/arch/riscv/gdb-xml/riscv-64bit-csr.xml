@@ -10,6 +10,8 @@
 <feature name="org.gnu.gdb.riscv.csr">
   <reg name="cycle" bitsize="64"/>
   <reg name="time" bitsize="64"/>
+  <reg name="htbase" bitsize="64"/>
+  <reg name="htbound" bitsize="64"/>
   <reg name="sstatus" bitsize="64"/>
   <reg name="sie" bitsize="64"/>
   <reg name="stvec" bitsize="64"/>
