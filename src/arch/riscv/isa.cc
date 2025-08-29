@@ -56,6 +56,7 @@
 #include "debug/LLSC.hh"
 #include "debug/MatRegs.hh"
 #include "debug/RiscvMisc.hh"
+#include "debug/RiscvHMMU.hh"
 #include "debug/VecRegs.hh"
 #include "mem/packet.hh"
 #include "mem/request.hh"
@@ -195,6 +196,11 @@ const std::array<const char *, NUM_MISCREGS> MiscRegNames = {{
     [MISCREG_RESERVED07]    = "",
     [MISCREG_FFLAGS]        = "FFLAGS",
     [MISCREG_FRM]           = "FRM",
+
+    [MISCREG_HTBASE]        = "HTBASE",
+    [MISCREG_HTDUMP]        = "HTDUMP",
+    [MISCREG_HTINVAL]       = "HTINVAL",
+    [MISCREG_HTBOUND]       = "HTBOUND",
 
     [MISCREG_VSTART]        = "VSTART",
     [MISCREG_VXSAT]         = "VXSAT",
@@ -967,6 +973,35 @@ ISA::setMiscReg(RegIndex idx, RegVal val)
                 setMiscRegNoEffect(MISCREG_FFLAGS, new_val);
             }
             break;
+        case MISCREG_HTBASE:
+            {
+                DPRINTF(RiscvHMMU, "Wrote HTBASE CSR with 0x%x", val);
+                // TODO: handle HTBASE write
+                setMiscRegNoEffect(idx, val);
+            }
+            break;
+        case MISCREG_HTDUMP:
+            {
+                DPRINTF(RiscvHMMU, "Wrote HTDUMP CSR with 0x%x", val);
+                // TODO: handle HTDUMP write
+                setMiscRegNoEffect(idx, val);
+            }
+            break;
+        case MISCREG_HTINVAL:
+            {
+                DPRINTF(RiscvHMMU, "Wrote HTINVAL CSR");
+                // TODO: handle HTINVAL write
+                setMiscRegNoEffect(idx, val);
+            }
+            break;
+        case MISCREG_HTBOUND:
+            {
+                DPRINTF(RiscvHMMU, "Wrote HTBOUND CSR with 0x%x", val);
+                // TODO: handle CSR_HTBOUND write
+                setMiscRegNoEffect(idx, val);
+            }
+            break;
+        
           default:
             setMiscRegNoEffect(idx, val);
         }
