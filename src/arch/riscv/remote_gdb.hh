@@ -163,6 +163,8 @@ class RemoteGDB : public BaseRemoteGDB
             uint32_t placeholder;
             uint64_t cycle;
             uint64_t time;
+            uint64_t htbase;
+            uint64_t htbound;
             uint64_t sstatus;
             uint64_t sie;
             uint64_t stvec;

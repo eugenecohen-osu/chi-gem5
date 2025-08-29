@@ -450,6 +450,12 @@ RemoteGDB::Riscv64GdbRegCache::getRegs(ThreadContext *context)
     r.time = context->readMiscRegNoEffect(
         CSRData.at(CSR_TIME).physIndex);
 
+    // Alaska CSRs
+    r.htbase = context->readMiscRegNoEffect(
+        CSRData.at(CSR_HTBASE).physIndex);
+    r.htbound = context->readMiscRegNoEffect(
+        CSRData.at(CSR_HTBOUND).physIndex);
+
     // S mode CSR
     r.sstatus = context->readMiscReg(
         CSRData.at(CSR_SSTATUS).physIndex) & RVxCSRMasks.at(CSR_SSTATUS);
