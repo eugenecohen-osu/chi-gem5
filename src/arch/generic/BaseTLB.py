@@ -46,6 +46,7 @@ class TypeTLB(ScopedEnum):
     instruction: TLB contains instruction entries only
     data: TLB contains data entries only
     unified: TLB contains both instruction and data entries
+    handle: TLB contains handle memory mappings
 
     The enum values have been selected in order to perform bitwise
     operations on them. For example a unified TLB contains both
@@ -55,7 +56,7 @@ class TypeTLB(ScopedEnum):
     bool has_data = tlb->type() & TypeTLB::data;
     """
 
-    map = {"instruction": 0x1, "data": 0x2, "unified": 0x3}
+    map = {"instruction": 0x1, "data": 0x2, "unified": 0x3, "handle" : 0x4}
 
 
 class BaseTLB(SimObject):
