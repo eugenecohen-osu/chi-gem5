@@ -65,6 +65,7 @@ Source('reg_abi.cc', tags=['riscv isa'])
 Source('remote_gdb.cc', tags=['riscv isa'])
 Source('semihosting.cc', tags=['riscv isa'])
 Source('tlb.cc', tags=['riscv isa'])
+Source('htlb.cc', tags=['riscv isa'])
 
 Source('linux/se_workload.cc', tags=['riscv isa'])
 Source('linux/fs_workload.cc', tags=['riscv isa'])
@@ -125,6 +126,13 @@ SimObject(
     sim_objects=['RiscvPagetableWalker', 'RiscvTLB'],
     tags=['riscv isa']
 )
+SimObject(
+    'RiscvHTLB.py',
+    sim_objects=['RiscvHandletableWalker', 'RiscvHTLB'],
+    tags=['riscv isa']
+)
+DebugFlag("HTLB", tags=['riscv isa'])
+DebugFlag("HTLBVerbose", tags=['riscv isa'])
 
 SimObject('RiscvCPU.py', sim_objects=[], tags=['riscv isa'])
 SimObject('RiscvHmmuCPU.py', sim_objects=[], tags=['riscv isa'])
