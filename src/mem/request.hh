@@ -608,6 +608,18 @@ class Request : public Extensible<Request>
     }
 
     /**
+     * Set just the virtual address. This is used for handle memory
+     * management when replacing a handle virtual address with a
+     * normal one.
+     */
+    void
+    setVaddr(Addr vaddr)
+    {
+        _vaddr = vaddr;
+        privateFlags.set(VALID_VADDR);
+    }
+
+    /**
      * Generate two requests as if this request had been split into two
      * pieces. The original request can't have been translated already.
      */
