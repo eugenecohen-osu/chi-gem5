@@ -59,6 +59,7 @@ Source('process.cc', tags=['riscv isa'])
 Source('pagetable.cc', tags=['riscv isa'])
 Source('pagetable_walker.cc', tags=['riscv isa'])
 Source('handletable.cc', tags=['riscv isa'])
+Source('handletable_walker.cc', tags=['riscv isa'])
 Source('pma_checker.cc', tags=['riscv isa'])
 Source('pmp.cc', tags=['riscv isa'])
 Source('reg_abi.cc', tags=['riscv isa'])
@@ -131,6 +132,7 @@ SimObject(
     sim_objects=['RiscvHandletableWalker', 'RiscvHTLB'],
     tags=['riscv isa']
 )
+DebugFlag("HandleTableWalker", tags=['riscv isa'])
 DebugFlag("HTLB", tags=['riscv isa'])
 DebugFlag("HTLBVerbose", tags=['riscv isa'])
 
