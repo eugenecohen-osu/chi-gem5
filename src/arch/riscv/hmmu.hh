@@ -39,6 +39,11 @@
 #define __ARCH_RISCV_HMMU_HH__
 
 #include "arch/riscv/mmu.hh"
+#include "arch/riscv/handletable.hh"
+#include "arch/riscv/htlb.hh"
+#include "arch/riscv/pagetable_walker.hh"
+#include "arch/riscv/handletable_walker.hh"
+#include "params/RiscvHMMU.hh"
 #include "debug/RiscvHMMU.hh"
 
 namespace gem5
@@ -50,9 +55,10 @@ class HMMU : public MMU
 {
   public:
     BasePMAChecker *pma;
+    BaseTLB* htb;
 
     HMMU(const RiscvHMMUParams &p)
-      : MMU(p, p.pma_checker), pma(p.pma_checker)
+      : MMU(p, p.pma_checker), pma(p.pma_checker), htb(p.htb)
     {}
 
     void
@@ -65,11 +71,38 @@ class HMMU : public MMU
     Addr
     getValidAddr(Addr vaddr, ThreadContext *tc, Mode mode) override
     {
-        if (mode == BaseMMU::Execute) {
-            return static_cast<TLB*>(itb)->getValidAddr(vaddr, tc, mode);
+        if (isVaddrHandle(vaddr)) {
+            return reinterpret_cast<HTLB*>(htb)->getValidAddr(vaddr, tc, mode);
         }
-        return static_cast<TLB*>(dtb)->getValidAddr(vaddr, tc, mode);
+        if (mode == BaseMMU::Execute) {
+            return reinterpret_cast<TLB*>(itb)->getValidAddr(vaddr, tc, mode);
+        }
+        return reinterpret_cast<TLB*>(dtb)->getValidAddr(vaddr, tc, mode);
     }
+
+    // virtual Fault
+    // translateAtomic(const RequestPtr &req, ThreadContext *tc,
+    //                 Mode mode) override
+    // {
+    //     TODO: DO TWO TRANSLATIONS
+    //     return getTlb(mode)->translateAtomic(req, tc, mode);
+    // }
+
+    // virtual void
+    // translateTiming(const RequestPtr &req, ThreadContext *tc,
+    //                 Translation *translation, Mode mode) override
+    // {
+    //     TODO: DO TWO TRANSLATIONS
+    //     return getTlb(mode)->translateTiming(req, tc, translation, mode);
+    // }
+
+    // virtual Fault
+    // translateFunctional(const RequestPtr &req, ThreadContext *tc,
+    //                     Mode mode) override
+    // {
+    //     TODO: DO TWO TRANSLATIONS
+    //     return getTlb(mode)->translateFunctional(req, tc, mode);
+    // }
 
     TranslationGenPtr
     translateFunctional(Addr start, Addr size, ThreadContext *tc,
@@ -92,13 +125,26 @@ class HMMU : public MMU
         return static_cast<TLB*>(dtb)->getWalker();
     }
 
+    HandleWalker *
+    getHandleWalker()
+    {
+        return static_cast<HTLB*>(htb)->getWalker();
+    }
+
     void
     takeOverFrom(BaseMMU *old_mmu) override
     {
       HMMU *ommu = dynamic_cast<HMMU*>(old_mmu);
-      BaseMMU::takeOverFrom(ommu);
-      pma->takeOverFrom(ommu->pma);
 
+      Port *old_htb_port = ommu->htb->getTableWalkerPort();
+      Port *new_htb_port = htb->getTableWalkerPort();
+      if (new_htb_port)
+        new_htb_port->takeOverFrom(old_htb_port);
+
+      BaseMMU::takeOverFrom(ommu);
+      htb = ommu->htb;
+
+      pma->takeOverFrom(ommu->pma);
     }
 
     PMP *

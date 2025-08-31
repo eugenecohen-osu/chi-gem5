@@ -50,6 +50,8 @@ class RiscvHMMU(BaseMMU):
 
     itb = RiscvTLB(entry_type="instruction")
     dtb = RiscvTLB(entry_type="data")
+    htb = Param.RiscvTLB("Handle TLB")
+    htb.entry_type="handle"
     pma_checker = Param.BasePMAChecker(PMAChecker(), "PMA Checker")
     pmp = Param.PMP(PMP(), "Physical Memory Protection Unit")
 
@@ -60,3 +62,5 @@ class RiscvHMMU(BaseMMU):
     def connectWalkerPorts(self, iport, dport):
         self.itb.walker.port = iport
         self.dtb.walker.port = dport
+        # handle walker port shared with data!!
+        self.htb.walker.port = dport
