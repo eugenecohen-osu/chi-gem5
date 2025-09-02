@@ -74,14 +74,15 @@ static constexpr Addr HT_TABLE_MAX_ENTRIES = HT_TABLE_SIZE / sizeof(HT_Entry);
 static inline uint64_t getHt0Index(Addr vhaddr)
 {
     vhaddr &= HANDLE_ID_MASK;
-    return bits(vhaddr, 63, 45);
+    // HT0 index is the upper 13 bits of the handle id
+    return bits(vhaddr, 63, 50);
 }
 
 static inline uint64_t getHt1Index(Addr vhaddr)
 {
     vhaddr &= HANDLE_ID_MASK;
-    // TODO IS THIS RIGHT?  BITS 31:27 are not part of handle id and always zero?
-    return bits(vhaddr, 44, 27);
+    // HT1 index is the lower 18 bits of the handle id
+    return bits(vhaddr, 49, 32);
 }
 
 static inline Addr getHandleBaseVHAddr(Addr vhaddr)
