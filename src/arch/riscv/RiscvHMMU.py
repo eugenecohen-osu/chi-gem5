@@ -40,6 +40,7 @@ from m5.objects.BaseMMU import BaseMMU
 from m5.objects.PMAChecker import PMAChecker
 from m5.objects.PMP import PMP
 from m5.objects.RiscvTLB import RiscvTLB
+from m5.objects.RiscvHTLB import RiscvHTLB
 from m5.params import *
 
 
@@ -50,8 +51,7 @@ class RiscvHMMU(BaseMMU):
 
     itb = RiscvTLB(entry_type="instruction")
     dtb = RiscvTLB(entry_type="data")
-    htb = Param.RiscvTLB("Handle TLB")
-    htb.entry_type="handle"
+    htb = Param.RiscvHTLB(RiscvHTLB(entry_type="handle"), "Handle TLB")
     pma_checker = Param.BasePMAChecker(PMAChecker(), "PMA Checker")
     pmp = Param.PMP(PMP(), "Physical Memory Protection Unit")
 
