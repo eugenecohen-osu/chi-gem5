@@ -82,6 +82,12 @@ class BaseMMU : public SimObject
          * squashed?
          */
         virtual bool squashed() const { return false; }
+
+        /** This function is used by multi-stage walkers to determine
+         * if a previous stage faulted.
+         * @ return Is the translation currently in a faulted state?
+         */
+        virtual bool faulted() const { return false; }
     };
 
   protected:

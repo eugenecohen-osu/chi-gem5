@@ -270,6 +270,11 @@ class DataTranslation : public BaseMMU::Translation
     {
         return xc->isSquashed();
     }
+
+    bool faulted() const
+    {
+        return (state->getFault() != NoFault);
+    }
 };
 
 } // namespace gem5
