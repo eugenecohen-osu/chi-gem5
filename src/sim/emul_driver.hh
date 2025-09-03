@@ -41,6 +41,7 @@ namespace gem5
 
 class Process;
 class ThreadContext;
+class VMA;
 
 /**
  * EmulatedDriver is an abstract base class for fake SE-mode device drivers.
@@ -98,6 +99,13 @@ class EmulatedDriver : public SimObject
     virtual Addr mmap(ThreadContext *tc, Addr start, uint64_t length,
                       int prot, int tgtFlags, int tgtFd, off_t offset)
                       { return -EBADF; }
+
+    /**
+     * Handler for faults for VM regions added by the driver.  
+     * @return true if the fault was fixed up
+     */
+    virtual bool vm_fault(Process *process, Addr vaddr, const VMA *vma)
+                      { return false; }
 };
 
 } // namespace gem5

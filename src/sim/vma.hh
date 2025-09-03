@@ -36,6 +36,7 @@
 #include "base/types.hh"
 #include "debug/Vma.hh"
 #include "mem/se_translating_port_proxy.hh"
+#include "sim/emul_driver.hh"
 
 namespace gem5
 {
@@ -46,8 +47,8 @@ class VMA
 
   public:
     VMA(AddrRange r, Addr page_bytes, const std::string& vma_name="anon",
-        int fd=-1, off_t off=0)
-        : _addrRange(r), _pageBytes(page_bytes), _vmaName(vma_name)
+        int fd=-1, off_t off=0, EmulatedDriver *driver=nullptr)
+        : _addrRange(r), _pageBytes(page_bytes), _vmaName(vma_name), _driver(driver)
     {
         DPRINTF(Vma, "Creating vma start %#x len %llu end %#x\n",
                 r.start(), r.size(), r.end());
@@ -81,6 +82,11 @@ class VMA
      * host machine.
      */
     bool hasHostBuf() const { return _origHostBuf != nullptr; }
+
+    /**
+     * Check if there is a driver that owns this virtual memory area
+     */
+    bool hasDriver() const { return _driver != nullptr; }
 
     /**
      * Copy memory from a buffer which resides on the host machine into a
@@ -141,6 +147,12 @@ class VMA
         return _addrRange.contains(a);
     }
 
+    bool invokeDriverFaultHandler(Process *process, const Addr &a) const
+    {
+        assert(_driver != nullptr);
+        return _driver->vm_fault(process, a, this);
+    }
+
   private:
     void sanityCheck();
 
@@ -180,6 +192,11 @@ class VMA
      * application.
      */
     std::string _vmaName;
+
+    /**
+     * The driver that owns this VM area, or null if none.
+     */
+    EmulatedDriver *_driver;
 
     /**
      * MappedFileBuffer is a wrapper around a region of host memory backed by a
