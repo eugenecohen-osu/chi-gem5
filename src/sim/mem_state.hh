@@ -42,6 +42,7 @@
 #include "mem/se_translating_port_proxy.hh"
 #include "sim/serialize.hh"
 #include "sim/vma.hh"
+#include "sim/emul_driver.hh"
 
 namespace gem5
 {
@@ -129,7 +130,7 @@ class MemState : public Serializable
      */
     void mapRegion(Addr start_addr, Addr length,
                    const std::string& name="anon", int sim_fd=-1,
-                   Addr offset=0);
+                   Addr offset=0, EmulatedDriver *driver = nullptr);
 
     /**
      * Unmap a pre-existing region. Depending on the range being unmapped
