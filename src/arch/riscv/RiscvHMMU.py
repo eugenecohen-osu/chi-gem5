@@ -57,7 +57,7 @@ class RiscvHMMU(BaseMMU):
 
     @classmethod
     def walkerPorts(cls):
-        return ["mmu.itb.walker.port", "mmu.dtb.walker.port"]
+        return ["mmu.itb.walker.port", "mmu.dtb.walker.port", "mmu.htb.walker.port"]
 
     def connectWalkerPorts(self, iport, dport):
         self.itb.walker.port = iport
