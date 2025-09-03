@@ -5,6 +5,44 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "(gdb) Launch SE min_halloc RiscvHmmuTimingSimpleCPU",
+            "type": "cppdbg",
+            "request": "launch",
+            "targetArchitecture": "arm64",
+            "program": "${workspaceFolder}/build/RISCV/gem5.opt",
+            "args": [
+                "--outdir", "out",
+                //"--debug-flags=SimpleCPU,AlaskaDriver,HandleTableWalker,RiscvHMMU,HTLB,HTLBVerbose,Vma,MMU,PageTableWalker,TLB,TLBVerbose,SyscallBase,SyscallVerbose,ExecAll,Registers",
+                "--debug-flags=AlaskaDriver,HandleTableWalker,RiscvHMMU,HTLB,HTLBVerbose,Vma,PageTableWalker,TLB,SyscallBase,SyscallVerbose",
+                //"--debug-flags=Vma,MMU,PageTableWalker,TLB,TLBVerbose,SyscallBase,SyscallVerbose",
+                //"--debug-flags=SyscallBase,SyscallVerbose,ExecAll",
+                //"--debug-flags=SyscallBase,SyscallVerbose",
+                "configs/deprecated/example/se.py",
+                //"--wait-gdb",
+                "--ruby",
+                "--cpu-type=RiscvHmmuTimingSimpleCPU",
+                "--topology=Crossbar",
+                "--num-cpus=1",
+                "--num-dirs=2",
+                "--num-l3caches=2",
+                "--drivers", "AlaskaDriver=alaska",
+                "--cmd=tests/test-progs/min_halloc/bin/riscv/linux/min_halloc",
+                //">", "debug.txt"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
             "name": "(gdb) Launch SE hello RiscvHmmuTimingSimpleCPU",
             "type": "cppdbg",
             "request": "launch",
@@ -36,26 +74,23 @@
                 }
             ]
         },
-        {
-            "name": "(gdb) Launch SE min_halloc RiscvHmmuTimingSimpleCPU",
+         {
+            "name": "(gdb) Launch SE hello RiscvTimingSimpleCPU",
             "type": "cppdbg",
             "request": "launch",
             "targetArchitecture": "arm64",
             "program": "${workspaceFolder}/build/RISCV/gem5.opt",
             "args": [
                 "--outdir", "out",
-                //"--debug-flags=MMU,PageTableWalker,TLB,TLBVerbose,SyscallBase,SyscallVerbose,ExecAll,Registers",
-                //"--debug-flags=SyscallBase,SyscallVerbose,ExecAll",
-                "--debug-flags=SyscallBase,SyscallVerbose",
+                "--debug-flags=MMU,PageTableWalker,TLB,TLBVerbose,SyscallBase,SyscallVerbose,ExecAll,Registers",
                 "configs/deprecated/example/se.py",
                 "--ruby",
-                "--cpu-type=RiscvHmmuTimingSimpleCPU",
+                "--cpu-type=RiscvTimingSimpleCPU",
                 "--topology=Crossbar",
                 "--num-cpus=1",
                 "--num-dirs=2",
                 "--num-l3caches=2",
-                "--drivers", "AlaskaDriver=alaska",
-                "--cmd=tests/test-progs/min_halloc/bin/riscv/linux/min_halloc",
+                "--cmd=tests/test-progs/hello/bin/riscv/linux/hello",
                 //">", "debug.txt"
             ],
             "stopAtEntry": false,
@@ -80,6 +115,7 @@
             "args": [
                 "--outdir", "out",
                 //"--debug-flags=MMU,PageTableWalker,TLB,TLBVerbose,SyscallBase,SyscallVerbose,ExecAll,Registers",
+                "--debug-flags=MMU,PageTableWalker,TLB,TLBVerbose,SyscallBase,SyscallVerbose",
                 "configs/example/gem5_library/riscv-ubuntu-run.py",
                 //"--caches",
                 // "--l1i_size=16kB",
