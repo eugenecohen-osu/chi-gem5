@@ -59,6 +59,3 @@ class RiscvHTLB(BaseTLB):
     walker = Param.RiscvHandletableWalker(
         RiscvHandletableWalker(), "handle table walker"
     )
-    # Grab the pma_checker from the MMU
-    pma_checker = Param.BasePMAChecker(Parent.any, "PMA Checker")
-    pmp = Param.PMP(Parent.any, "Physical Memory Protection Unit")

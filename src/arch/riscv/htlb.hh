@@ -101,10 +101,6 @@ class HTLB : public BaseTLB
     } stats;
 
   public:
-    BasePMAChecker *pma;
-    PMP *pmp;
-
-  public:
     typedef RiscvHTLBParams Params;
     HTLB(const Params &p);
 

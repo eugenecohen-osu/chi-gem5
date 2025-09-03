@@ -40,8 +40,6 @@
 #include "arch/riscv/hmmu.hh"
 #include "arch/riscv/handletable.hh"
 #include "arch/riscv/handletable_walker.hh"
-#include "arch/riscv/pma_checker.hh"
-#include "arch/riscv/pmp.hh"
 #include "arch/riscv/pra_constants.hh"
 #include "arch/riscv/process.hh"
 #include "arch/riscv/utility.hh"
@@ -72,8 +70,7 @@ buildKey(Addr handle_id, uint16_t asid)
 
 HTLB::HTLB(const Params &p) :
     BaseTLB(p), size(p.size), tlb(size),
-    lruSeq(0), stats(this), pma(p.pma_checker),
-    pmp(p.pmp)
+    lruSeq(0), stats(this)
 {
     for (size_t x = 0; x < size; x++) {
         tlb[x].trieHandle = NULL;
@@ -151,7 +148,7 @@ HTLB::insert(Addr handle_id, const HTlbEntry &entry)
     // If somebody beat us to it, just use that existing entry.
     HTlbEntry *newEntry = lookup(handle_id, entry.asid, BaseMMU::Read, true);
     if (newEntry) {
-        assert(newEntry->vhaddr == entry.vhaddr);
+        assert(newEntry->vhaddr == entry.vhaddr); // align???
         assert(newEntry->vaddr == entry.vaddr);
         assert(newEntry->asid == entry.asid);
         return newEntry;
@@ -303,7 +300,6 @@ HTLB::hiddenTranslateWithTLB(Addr vhaddr, uint16_t asid, BaseMMU::Mode mode)
     Addr handle_id = getHandleIdFromVAddr(vhaddr);
     HTlbEntry *e = lookup(handle_id, asid, mode, true);
     assert(e != nullptr);
-    // CHECK THIS TODO !!!
     return e->vaddr + getOffsetFromVHAddr(vhaddr);
 }
 
@@ -468,9 +464,6 @@ HTLB::translate(const RequestPtr &req, ThreadContext *tc,
 
         Fault fault = NoFault;
 
-        // TODO: is this needed for handles???
-        fault = pma->checkVAddrAlignment(req, mode);
-
         // we should check if we're in physical mode and bypass handle translation
 
         // this is already in tlb.cc
@@ -502,18 +495,8 @@ HTLB::translate(const RequestPtr &req, ThreadContext *tc,
             }
         }
 
-        // should we remove this for handle since MMU will do the check?? TODO
-        if (!delayed && fault == NoFault) {
-            // do pmp check if any checking condition is met.
-            // timingFault will be NoFault if pmp checks are
-            // passed, otherwise an address fault will be returned.
-            fault = pmp->pmpCheck(req, mode, pmode, tc);
-        }
+        // no PMP or PMA check here because we don't have a paddr
 
-        // should we remove this for handle since MMU will do the check?? TODO
-        if (!delayed && fault == NoFault) {
-            fault = pma->check(req, mode);
-        }
         return fault;
     } else { // not FullSystem
 
@@ -523,8 +506,19 @@ HTLB::translate(const RequestPtr &req, ThreadContext *tc,
         // if the vaddr is a handle address
         if (isVaddrHandle(vhaddr)) {
             // translate the handle vaddr to a normal vaddr, replacing the vaddr in the req
-            DPRINTF(HTLB, "vaddr is HANDLE, translating %#x", vhaddr);
+            DPRINTF(HTLB, "vaddr is HANDLE, translating %#x\n", vhaddr);
             fault = doTranslate(req, tc, translation, mode, delayed);
+
+            // some faults can be fixed up
+            if (fault != NoFault) {
+                Process *process = tc->getProcessPtr();
+                if (process->fixupFault(vhaddr)) {
+                    // If we did, lookup the entry for the new page.
+                    fault = doTranslate(req, tc, translation, mode, delayed);
+                }
+            }
+        } else {
+            DPRINTF(HTLB, "not a handle vaddr (timing) %#x\n", vhaddr);
         }
 
         return fault;
@@ -546,10 +540,11 @@ HTLB::translateTiming(const RequestPtr &req, ThreadContext *tc,
     bool delayed;
     assert(translation);
     Fault fault = translate(req, tc, translation, mode, delayed);
-    if (!delayed)
+    if (!delayed) {
         translation->finish(fault, req, tc, mode);
-    else
+    } else {
         translation->markDelayed();
+    }
 }
 
 Fault
@@ -557,6 +552,13 @@ HTLB::translateFunctional(const RequestPtr &req, ThreadContext *tc,
                          BaseMMU::Mode mode)
 {
     const Addr vhaddr = getValidAddr(req->getVaddr(), tc, mode);
+
+    // if this is not a handle, no translation needed
+    if (!isVaddrHandle(vhaddr)) {
+        DPRINTF(HTLB, "not a handle vaddr (functional) %#x\n", vhaddr);
+        return NoFault;
+    }
+
     Addr vaddr = vhaddr; // vhaddr in, vaddr out
 
     HMMU *mmu = static_cast<HMMU *>(tc->getMMUPtr());
