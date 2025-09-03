@@ -64,10 +64,10 @@ static inline bool isVaddrHandle(Addr vaddr)
 
 static inline Addr getHandleIdFromVAddr(Addr vaddr)
 {
-    return bits(vaddr, 63, 32);
+    return bits(vaddr, 62, 32);
 }
 
-static constexpr Addr HT_TABLE_SIZE_BITS = 18; // log2( 2MB )
+static constexpr Addr HT_TABLE_SIZE_BITS = 21; // log2( 2MB )
 static constexpr Addr HT_TABLE_SIZE = (1 << HT_TABLE_SIZE_BITS);
 static constexpr Addr HT_TABLE_MAX_ENTRIES = HT_TABLE_SIZE / sizeof(HT_Entry);
 
