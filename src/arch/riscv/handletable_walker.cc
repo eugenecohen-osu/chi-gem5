@@ -343,19 +343,20 @@ HandleWalker::WalkerState::walkOneStage(Addr vhaddr)
         return NoFault;
     }
 
-    // calculate the handle index and check against bounds
-    uint64_t ht0_index = getHt0Index(vhaddr);
+    // extract the handle id and check against bounds
+    Addr handleId = getHandleIdFromVAddr(vhaddr);
     uint64_t ht_bound = tc->readMiscReg(MISCREG_HTBOUND);
-    if (ht0_index > ht_bound) {
-        DPRINTF(HandleTableWalker, "ht0 index %#x exceeds bounds %#x", ht0_index, ht_bound);
+    if (handleId > ht_bound) {
+        DPRINTF(HandleTableWalker, "handle id %#x exceeds bounds %#x", handleId, ht_bound);
         return handleFault();
     }
 
     // create physical request for the HT0 entry
     Addr ht0_base = tc->readMiscReg(MISCREG_HTBASE);
-    Addr ht0_entry_addr = ht0_base + (ht0_index * sizeof(HT_Entry));
-    DPRINTF(HandleTableWalker, "reading ht0 addr %#x", ht0_entry_addr);
-    read_packet = createReqPacket(ht0_entry_addr, MemCmd::ReadReq, sizeof(HT_Entry));
+    uint64_t ht0_index = getHt0Index(vhaddr);
+    Addr ht1_addr = ht0_base + (ht0_index * sizeof(HT_Entry));
+    DPRINTF(HandleTableWalker, "reading ht1 %#x\n", ht1_addr);
+    read_packet = createReqPacket(ht1_addr, MemCmd::ReadReq, sizeof(HT_Entry));
 
     if (timing)
     {
@@ -406,10 +407,11 @@ HandleWalker::WalkerState::stepWalk(void)
     // walk flags are initialized to false
     WalkFlags stepWalkFlags;
 
-    DPRINTF(HandleTableWalker, "Got level%d HTE: %#x\n", level, hte);
+    DPRINTF(HandleTableWalker, "Got HT%d entry: %#x\n", level, hte);
 
     // step 2:
     // Performing PMA/PMP checks on physical address of HTE
+    // TODO: implement
 
     // fault = walker->pmp->pmpCheck(read->req, BaseMMU::Read,
     //                 RiscvISA::PrivilegeMode::PRV_S, tc, entry.vaddr);
@@ -425,7 +427,7 @@ HandleWalker::WalkerState::stepWalk(void)
 
         // is hte null?
         if (hte == 0) {
-            DPRINTF(HandleTableWalker, "HT0 entry at %#x is null", read_packet->req->getPaddr());
+            DPRINTF(HandleTableWalker, "HT0 entry at %#x is null\n", read_packet->req->getPaddr());
             return handleFault();
         }
 
@@ -434,7 +436,7 @@ HandleWalker::WalkerState::stepWalk(void)
         assert (ht1_index < HT_TABLE_MAX_ENTRIES);
         Addr ht1_entry_addres = hte + (ht1_index * sizeof(HT_Entry));
 
-        DPRINTF(HandleTableWalker, "Reading HT1 at %#x", ht1_entry_addres);
+        DPRINTF(HandleTableWalker, "Reading HT1 at %#x\n", ht1_entry_addres);
         nextRead = ht1_entry_addres;
         nextState = Translate;
 
@@ -442,35 +444,22 @@ HandleWalker::WalkerState::stepWalk(void)
 
         walker->handlewalkerstats.num_ht1_walks++;
 
-        DPRINTF(HandleTableWalker, "HT1 entry %#x has vaddr %#x", nextRead, hte);
+        DPRINTF(HandleTableWalker, "HT1 entry at %#x has vaddr %#x\n", read_packet->req->getPaddr(), hte);
 
-        // finalize tlb entry with by aligning to handle base
-        entry.vhaddr = getHandleBaseVHAddr(entry.vhaddr);
+        // finalize tlb entry with by aligning handle address
+        entry.vhaddr &= ~HANDLE_OFFSET_MASK;
         entry.vaddr = hte;
 
-        // Also don't insert on special_access
-        if (!memaccess.bypassTLB())
+        stepWalkFlags.doEndWalk = true;
+        if (!memaccess.bypassTLB()) {
             stepWalkFlags.doTLBInsert = true;
+        }
 
     } else { // bad level
             stepWalkFlags.doEndWalk = true;
             fault = handleFault();
     }
         
-
-    PacketPtr oldRead = read_packet;
-    Request::Flags flags = oldRead->req->getFlags();
-
-    // If we didn't jump to early_exit, we're setting up another read.
-    RequestPtr request = std::make_shared<Request>(
-        nextRead, oldRead->getSize(), flags, walker->requestorId);
-
-    delete oldRead;
-    oldRead = nullptr;
-
-    read_packet = new Packet(request, MemCmd::ReadReq);
-    read_packet->allocate();
-
     if (stepWalkFlags.doEndWalk) {
 
         if (stepWalkFlags.doTLBInsert) {
@@ -480,6 +469,21 @@ HandleWalker::WalkerState::stepWalk(void)
             }
         }
         endWalk();
+
+    } else {
+        nextState = Translate;
+
+        PacketPtr oldRead = read_packet;
+        Request::Flags flags = oldRead->req->getFlags();
+
+        RequestPtr request = std::make_shared<Request>(
+            nextRead, oldRead->getSize(), flags, walker->requestorId);
+
+        delete oldRead;
+        oldRead = nullptr;
+
+        read_packet = new Packet(request, MemCmd::ReadReq);
+        read_packet->allocate();
     }
 
     return fault;
@@ -535,20 +539,12 @@ HandleWalker::WalkerState::recvPacket(PacketPtr pkt)
              * permissions violations, so we'll need the return value as
              * well.
              */
-            Addr vaddr = req->getVaddr();
-            vaddr = Addr(sext<SV39_VADDR_BITS>(vaddr));
-            Addr paddr = walker->htlb->hiddenTranslateWithTLB(vaddr, satp.asid, mode);
+            Addr vhaddr = req->getVaddr();
+            Addr vaddr = walker->htlb->hiddenTranslateWithTLB(vhaddr, satp.asid, mode);
 
-            req->setPaddr(paddr);
+            req->setVaddr(vaddr);
 
-            // do pmp check if any checking condition is met.
-            // timingFault will be NoFault if pmp checks are
-            // passed, otherwise an address fault will be returned.
-            timingFault = walker->pmp->pmpCheck(req, mode, pmode, tc);
-
-            if (timingFault == NoFault) {
-                timingFault = walker->pma->check(req, mode);
-            }
+            // no pmp/pma check here because we don't have a paddr yet
 
             // Let the CPU continue.
             translation->finish(timingFault, req, tc, mode);
