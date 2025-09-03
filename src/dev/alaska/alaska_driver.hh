@@ -21,6 +21,8 @@ class ThreadContext;
 
 class AlaskaDriver final : public EmulatedDriver
 {
+    static constexpr uint32_t NUM_INITIAL_HT1_TABLES = 2;
+
   public:
     typedef AlaskaDriverParams Params;
     AlaskaDriver(const Params &p);
@@ -29,14 +31,19 @@ class AlaskaDriver final : public EmulatedDriver
     int open(ThreadContext *tc, int mode, int flags) override;
     Addr mmap(ThreadContext *tc, Addr start, uint64_t length,
               int prot, int tgt_flags, int tgt_fd, off_t offset) override;
+    bool vm_fault(Process *process, Addr vaddr, const VMA *vma) override;
 
+  protected:
 
-private:
-      
+    void init_ht(ThreadContext *tc, Process *process, Addr mmap_start);
+
+  private:
+    
+    Addr ht0_addr;
+    uint64_t num_ht1_tables;
 
 };
 
 }
-
 
 #endif
