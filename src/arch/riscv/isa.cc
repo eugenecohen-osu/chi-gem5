@@ -975,29 +975,29 @@ ISA::setMiscReg(RegIndex idx, RegVal val)
             break;
         case MISCREG_HTBASE:
             {
-                DPRINTF(RiscvHMMU, "Wrote HTBASE CSR with 0x%x", val);
-                // TODO: handle HTBASE write
+                DPRINTF(RiscvHMMU, "Wrote HTBASE CSR with 0x%x\n", val);
                 setMiscRegNoEffect(idx, val);
             }
             break;
         case MISCREG_HTDUMP:
             {
-                DPRINTF(RiscvHMMU, "Wrote HTDUMP CSR with 0x%x", val);
+                DPRINTF(RiscvHMMU, "Wrote HTDUMP CSR with 0x%x\n", val);
                 // TODO: handle HTDUMP write
                 setMiscRegNoEffect(idx, val);
             }
             break;
         case MISCREG_HTINVAL:
             {
-                DPRINTF(RiscvHMMU, "Wrote HTINVAL CSR");
-                // TODO: handle HTINVAL write
+                DPRINTF(RiscvHMMU, "Wrote HTINVAL CSR\n");
+                
+                // TODO CALL TO HMMU TO FLUSH HTLB
+                
                 setMiscRegNoEffect(idx, val);
             }
             break;
         case MISCREG_HTBOUND:
             {
-                DPRINTF(RiscvHMMU, "Wrote HTBOUND CSR with 0x%x", val);
-                // TODO: handle CSR_HTBOUND write
+                DPRINTF(RiscvHMMU, "Wrote HTBOUND CSR with 0x%x\n", val);
                 setMiscRegNoEffect(idx, val);
             }
             break;
