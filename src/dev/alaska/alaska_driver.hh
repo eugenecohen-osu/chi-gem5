@@ -3,12 +3,9 @@
 
 #include <cassert>
 #include <cstdint>
-//#include <set>
-//#include <unordered_map>
 
 #include "base/addr_range_map.hh"
 #include "base/types.hh"
-//#include "enums/GfxVersion.hh"
 #include "mem/request.hh"
 #include "sim/emul_driver.hh"
 
@@ -36,10 +33,15 @@ class AlaskaDriver final : public EmulatedDriver
   protected:
 
     void init_ht(ThreadContext *tc, Process *process, Addr mmap_start);
+    void alloc_ht1(Process *process, uint64_t index, Addr vaddr);
 
   private:
     
-    Addr ht0_addr;
+    std::vector<Addr> ht1_paddrs;
+
+    Addr ht0_paddr;
+    Addr ht1_vaddr;
+    uint64_t ht1_mmap_length;
     uint64_t num_ht1_tables;
 
 };
