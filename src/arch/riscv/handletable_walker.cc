@@ -353,6 +353,11 @@ HandleWalker::WalkerState::walkOneStage(Addr vhaddr)
 
     // create physical request for the HT0 entry
     Addr ht0_base = tc->readMiscReg(MISCREG_HTBASE);
+    if (ht0_base == 0) {
+        DPRINTF(HandleTableWalker, "ht0_base is zero, translation failed for %#x", vhaddr);
+        return handleFault();
+    }
+    
     uint64_t ht0_index = getHt0Index(vhaddr);
     Addr ht0_entry_addr = ht0_base + (ht0_index * sizeof(HT_Entry));
     DPRINTF(HandleTableWalker, "reading ht0 entry %#x\n", ht0_entry_addr);
