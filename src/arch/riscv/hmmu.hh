@@ -84,7 +84,8 @@ class HMMU : public MMU
         finish(const Fault &fault, const RequestPtr &req, ThreadContext *tc,
                BaseMMU::Mode mode)
         {
-            _hmmu->handleTranslationFinished(fault, req, tc, mode);
+            _hmmu->handleTranslationFinished(fault, req, tc, mode, this);
+            delete this; // scary, but valid
         }
     };
 
@@ -93,8 +94,7 @@ class HMMU : public MMU
     BaseTLB* htb;
 
     HMMU(const RiscvHMMUParams &p)
-      : MMU(p, p.pma_checker), pma(p.pma_checker), htb(p.htb),
-        handleTranslation(this)
+      : MMU(p, p.pma_checker), pma(p.pma_checker), htb(p.htb)
     {}
 
     void
@@ -134,24 +134,21 @@ class HMMU : public MMU
     translateTiming(const RequestPtr &req, ThreadContext *tc,
                     Translation *translation, Mode mode) override
     {
-        // we only support one outstanding translation at a time
-        // this will probably fail on O3 requiring multiple oustanding requests
-        assert (handleTranslation.translation == nullptr);
+        HandleTranslation *handleTranslation = new HandleTranslation(this);
 
         // store away the caller's translation data
-        handleTranslation.translation = translation;
-        handleTranslation.mode = mode;
+        handleTranslation->translation = translation;
+        handleTranslation->mode = mode;
 
         // first stage: do a handle htlb translation
-        htb->translateTiming(req, tc, &handleTranslation, mode);
+        htb->translateTiming(req, tc, handleTranslation, mode);
     }
 
     void handleTranslationFinished(const Fault &fault, const RequestPtr &req,
-                                   ThreadContext *tc, Mode mode)
+                                   ThreadContext *tc, Mode mode, HandleTranslation *handleTranslation)
     {
-        assert (handleTranslation.translation != nullptr);
-        Translation *callerTranslation = handleTranslation.translation;
-        handleTranslation.translation = nullptr;
+        Translation *callerTranslation = handleTranslation->translation;
+        handleTranslation->translation = nullptr;
 
         
         // fault on handle translation, finish now
@@ -228,9 +225,6 @@ class HMMU : public MMU
     {
         return static_cast<TLB*>(dtb)->pmp;
     }
-
-  private:
-    HandleTranslation handleTranslation;
 };
 
 } // namespace RiscvISA
