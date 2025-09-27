@@ -673,7 +673,7 @@ TLB::translateFunctional(const RequestPtr &req, ThreadContext *tc,
         paddr = pte->paddr | process->pTable->pageOffset(vaddr);
     }
 
-    DPRINTF(TLB, "Translated (functional) %#x -> %#x.\n", vaddr, paddr);
+    DPRINTF(TLBVerbose, "Translated (functional) %#x -> %#x.\n", vaddr, paddr);
     req->setPaddr(paddr);
     return NoFault;
 }

@@ -588,7 +588,7 @@ HTLB::translateFunctional(const RequestPtr &req, ThreadContext *tc,
     // CHECK THIS TODO
     vaddr += getOffsetFromVHAddr(vhaddr);
     
-    DPRINTF(HTLB, "Translated (functional) %#x -> %#x.\n", vhaddr, vaddr);
+    DPRINTF(HTLBVerbose, "Translated (functional) %#x -> %#x.\n", vhaddr, vaddr);
     req->setVaddr(vaddr);
     return NoFault;
 }
