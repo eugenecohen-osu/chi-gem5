@@ -1,0 +1,129 @@
+[
+    {
+        "category": "workload",
+        "id": "riscv-ubuntu-24.04-boot",
+        "description": "A full boot of Ubuntu 24.04 with Linux for RISCV. It runs an `m5 exit` command when the boot is completed unless the readfile is specified. If specified the readfile will be executed after booting. This workload throws 3 m5 exit events, the events are thrown when kernel is booted, when `after_boot.sh` script is executed and after readfile is run.",
+        "function": "set_kernel_disk_workload",
+        "resources": {
+            "bootloader": {
+                "id": "riscv-bootloader-opensbi-1.3.1",
+                "resource_version": "1.0.0"
+            },
+            "kernel": {
+                "id": "riscv-linux-6.8.12-kernel",
+                "resource_version": "1.0.0"
+            },
+            "disk_image": {
+                "id": "riscv-ubuntu-24.04-img",
+                "resource_version": "2.0.0"
+            }
+        },
+        "additional_params": {},
+        "architecture": "RISCV",
+        "source_url": "",
+        "resource_version": "2.0.1",
+        "gem5_versions": [
+            "25.0"
+        ]
+    },
+    {
+        "category": "bootloader",
+        "id": "riscv-bootloader-opensbi-1.3.1",
+        "author": [
+            "Hoa Nguyen"
+        ],
+        "description": "A linux bootloader made using opensbi version 1.3.1",
+        "license": "",
+        "source": "src/riscv-opensbi",
+        "source_url": "https://github.com/gem5/gem5-resources/tree/stable/src/riscv-opensbi",
+        "tags": [
+            "riscv-bootloader",
+            "fullsystem",
+            "riscv",
+            "opensbhi"
+        ],
+        "example_usage": "obtain_resource(resource_id=\"riscv-bootloader-opensbi-1.3.1\")",
+        "gem5_versions": [
+            "23.1",
+            "24.0",
+            "24.1",
+            "25.0"
+        ],
+        "resource_version": "1.0.0",
+        "architecture": "RISCV",
+        "url": "https://gem5dist.blob.core.windows.net/dist/develop/kernels/riscv/static/riscv-bootloader-opensbi-1.3.1-20231129",
+        "is_tar_archive": false,
+        "is_zipped": false,
+        "size": 1258291,
+        "md5sum": "44b3fe636c9d38567b04ef54ea362f0d"
+    },
+    {
+        "category": "kernel",
+        "id": "riscv-linux-6.8.12-kernel",
+        "author": [
+            "Harshil Patel"
+        ],
+        "description": "Version 6.8.12 of linux kernel that is built with gem5 bridge driver",
+        "license": "",
+        "source": "src/riscv-opensbi",
+        "source_url": "https://github.com/gem5/gem5-resources/tree/stable/src/riscv-opensbi",
+        "tags": [
+            "linux-kernel",
+            "riscv",
+            "fullsystem"
+        ],
+        "example_usage": "obtain_resource(resource_id=\"riscv-linux-6.8.12-kernel\")",
+        "gem5_versions": [
+            "23.1",
+            "24.0",
+            "24.1",
+            "25.0"
+        ],
+        "resource_version": "1.0.0",
+        "architecture": "RISCV",
+        "url": "https://gem5dist.blob.core.windows.net/dist/develop/kernels/riscv/static/riscv-vmlinux-6.8.12",
+        "is_zipped": false,
+        "is_tar_archive": false,
+        "size": 18874368,
+        "md5sum": "c29f3fce21f128870ebf769f8caef720"
+    },
+    {
+        "category": "disk-image",
+        "id": "riscv-ubuntu-24.04-img",
+        "description": "A disk image containing Ubuntu 24.04 for RISCV. This image will throw m5 exits at specific points duering the boot process. This image an `m5 readfile` instruction after booting if a readfile script is passed.",
+        "architecture": "RISCV",
+        "size": 5242880000,
+        "tags": [
+            "riscv",
+            "fullsystem"
+        ],
+        "is_zipped": true,
+        "md5sum": "593eb90acc0f7404e5a0d2cbbc0b98fc",
+        "source": "src/riscv-ubuntu-22.04",
+        "url": "https://gem5dist.blob.core.windows.net/dist/develop/images/riscv/ubuntu-24-04/riscv-ubuntu-24.04-20250515.gz",
+        "root_partition": "1",
+        "code_examples": [],
+        "license": "",
+        "author": [
+            "Harshil Patel"
+        ],
+        "source_url": "https://github.com/gem5/gem5-resources/tree/44d407b75dcdd9e410de570d12aae37aea8e4bd3/src/riscv-ubuntu-22.04",
+        "resource_version": "2.0.0",
+        "gem5_versions": [
+            "25.0"
+        ],
+        "example_usage": "obtain_resource(resource_id=\"riscv-ubuntu-24.04-img\")"
+    },
+    {
+        "category": "binary",
+        "id": "my-benchmark",
+        "description": "A RISCV binary used to test a specific RISCV instruction.",
+        "url": "file:/my-benchmark-file",
+        "architecture": "RISCV",
+        "is_zipped": false,
+        "resource_version": "1.0.0",
+        "gem5_versions": [
+            "25.0"
+        ]
+    }
+]

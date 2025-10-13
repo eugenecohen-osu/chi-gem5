@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -e
+set -u
+
 THISDIR=$(realpath $(pwd))
 export GEM5_RESOURCE_DIR=$THISDIR/resources
 mkdir -p $GEM5_RESOURCE_DIR
@@ -78,8 +81,16 @@ function wait_for_gem5_console() {
 
 wait_for_gem5_console localhost 3456 60 &
 
-build/RISCV/gem5.opt \
-  configs/example/gem5_library/riscv-ubuntu-run.py
+
+#  --pydebug \
+export M5_OVERRIDE_PY_SOURCE=true
+export GEM5_RESOURCE_JSON_APPEND=./resource-extra.json
+echo M5_OVERRIDE_PY_SOURCE is $M5_OVERRIDE_PY_SOURCE
+  build/RISCV/gem5.opt \
+    configs/example/gem5_library/riscv-ubuntu-run.py \
+    --pydebug \
+    --cpu atomic
+
 
 # --caches --l1i_size=16kB --l1d_size=16kB \
 # --l2cache --l2_size=256kB \
