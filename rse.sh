@@ -10,7 +10,6 @@
 
 #./build/RISCV/gem5.opt --outdir out configs/deprecated/example/se.py --list-cpu-types
 
-exit
 ./build/RISCV/gem5.opt \
         --outdir out \
         --debug-flags=AlaskaDriver,HandleTableWalker,RiscvHMMU,HTLB,HTLBVerbose,Vma,PageTableWalker,TLB,SyscallBase,SyscallVerbose \

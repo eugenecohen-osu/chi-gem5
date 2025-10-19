@@ -5,37 +5,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: debugtest",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/debugtest.py",
-            "console": "integratedTerminal"
-        },
-        {
-            "name": "Python Debugger: gem5",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/build/RISCV/gem5.opt",
-            "args": [
-                "configs/example/gem5_library/riscv-ubuntu-run.py"
-            ],
-            "console": "integratedTerminal"
-        },
-        {
-            "name": "Python Debugger: Attach using Process Id",
-            "type": "debugpy",
-            "request": "attach",
-            "processId": "${command:pickProcess}"
-        },
-        {
-            "name": "Python Debugger: Current File with Arguments",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal",
-            "args": "${command:pickArgs}"
-        },
-        {
             "name": "(gdb) Launch SE min_halloc RiscvHmmuTimingSimpleCPU",
             "type": "cppdbg",
             "request": "launch",
@@ -361,12 +330,6 @@
                     "ignoreFailures": true
                 }
             ]
-        },
-        {
-            "name": "Python Debugger: Attach using Process Id",
-            "type": "debugpy",
-            "request": "attach",
-            "processId": "${command:pickProcess}"
         },
         {
             "name": "Python Debugger: Remote Attach por 5678",

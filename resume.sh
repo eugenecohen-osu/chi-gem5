@@ -39,48 +39,6 @@ function wait_for_gem5_console() {
   return 0
 }
 
-
-# build/RISCV/gem5.opt --help > help.txt
-# build/RISCV/gem5.opt --debug-help > debug-help.txt
-
-
-# build/RISCV/gem5.opt \
-#     -r \
-#     --debug-flags=O3PipeView \
-#     --debug-file=debug.out \
-#     configs/learning_gem5/part1/simple-riscv.py
-
-# build/RISCV/gem5.opt \
-#     -r \
-#     --debug-flags=ExecAll,O3CPUAll \
-#     configs/learning_gem5/part1/simple-riscv.py
-
-# build/RISCV/gem5.opt \
-#     -r \
-#     --debug-flags=ExecAll \
-#     --debug-file=debug.out \
-#     configs/learning_gem5/part1/simple-riscv.py
-
-# build/RISCV/gem5.opt \
-#     configs/example/gem5_library/riscv-ubuntu-run.py
-
-# build/RISCV/gem5.opt \
-#     configs/example/gem5_library/riscv-fs.py
-
-#--cpu-type=TimingSimpleCPU \
-
-# build/RISCV/gem5.opt \
-#   configs/example/riscv/fs_linux.py \
-# --caches --l1i_size=16kB --l1d_size=16kB \
-# --l2cache --l2_size=256kB \
-# --mem-type=DDR4_2400_8x8 \
-# --mem-size=3GB \
-# --cpu-type=RiscvHmmuTimingSimpleCPU \
-# --kernel=img/bootloader-vmlinux-5.10 \
-# --disk-image=img/ubuntu-24.04.2-preinstalled-server-riscv64+unmatched.img \
-# --command-line="console=ttyS0"
-#--command-line="console=ttyS0 root=/dev/vda1 ro"
-
 wait_for_gem5_console localhost 3456 60 &
 
 
@@ -89,7 +47,7 @@ export M5_OVERRIDE_PY_SOURCE=true
 export GEM5_RESOURCE_JSON_APPEND=./resource-extra.json
 echo M5_OVERRIDE_PY_SOURCE is $M5_OVERRIDE_PY_SOURCE
   build/RISCV/gem5.opt \
-    configs/example/gem5_library/riscv-ubuntu-run.py \
+    configs/example/gem5_library/riscv-ubuntu-resume.py \
     --cpu atomic \
     --checkpoint-path $THISDIR/yukon
 

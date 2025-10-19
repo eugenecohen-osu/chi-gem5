@@ -94,6 +94,18 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--readfile", type=str, required=False, help="The file to execute on boot"
+)
+
+parser.add_argument(
+    "--checkpoint-path",
+    type=str,
+    required=False,
+    default="riscv-ubuntu-checkpoint/",
+    help="The directory to store the checkpoint.",
+)
+
+parser.add_argument(
     "--cpu", type=str, default=CPUTypes.TIMING, choices=get_cpu_types_str_set(), help="The CPU type used."
 )
 
@@ -221,6 +233,9 @@ kernel_args = board.get_default_kernel_args()
 print("override init to /bin/bash")
 kernel_args.append("init=/bin/bash")
 workload.set_parameter("kernel_args", kernel_args)
+if args.readfile:
+    print(f'setting workload readfile to {args.readfile}')
+    workload.set_parameter("readfile", args.readfile)
 
 board.set_workload(workload)
 
@@ -235,35 +250,44 @@ print(f'workload is {workload} kernel_args is {kernel_args} disk_device is {boar
 # default, or inherit directly from ExitHandler and specify a hypercall number.
 # See src/python/gem5/simulate/exit_handler.py for more information on which
 # behaviors map to which hypercalls, and what the default behaviors are.
-class CustomKernelBootedExitHandler(KernelBootedExitHandler):
-    @overrides(KernelBootedExitHandler)
-    def _process(self, simulator: "Simulator") -> None:
-        print("First exit: kernel booted")
+# class CustomKernelBootedExitHandler(KernelBootedExitHandler):
+#     @overrides(KernelBootedExitHandler)
+#     def _process(self, simulator: "Simulator") -> None:
+#         print("First exit: kernel booted")
 
-    @overrides(KernelBootedExitHandler)
-    def _exit_simulation(self) -> bool:
-        return False
-
-
-class CustomAfterBootExitHandler(ExitHandler, hypercall_num=2):
-    @overrides(ExitHandler)
-    def _process(self, simulator: "Simulator") -> None:
-        print("Second exit: Started `after_boot.sh` script")
-
-    @overrides(ExitHandler)
-    def _exit_simulation(self) -> bool:
-        return False
+#     @overrides(KernelBootedExitHandler)
+#     def _exit_simulation(self) -> bool:
+#         return False
 
 
-class AfterBootScriptExitHandler(ExitHandler, hypercall_num=3):
-    @overrides(ExitHandler)
-    def _process(self, simulator: "Simulator") -> None:
-        print(f"Third exit: {self.get_handler_description()}")
+# class CustomAfterBootExitHandler(ExitHandler, hypercall_num=2):
+#     @overrides(ExitHandler)
+#     def _process(self, simulator: "Simulator") -> None:
+#         print("Second exit: Started `after_boot.sh` script")
 
-    @overrides(ExitHandler)
-    def _exit_simulation(self) -> bool:
-        return True
+#     @overrides(ExitHandler)
+#     def _exit_simulation(self) -> bool:
+#         return False
+
+
+# class AfterBootScriptExitHandler(ExitHandler, hypercall_num=3):
+#     @overrides(ExitHandler)
+#     def _process(self, simulator: "Simulator") -> None:
+#         print(f"Third exit: {self.get_handler_description()}")
+
+#     @overrides(ExitHandler)
+#     def _exit_simulation(self) -> bool:
+#         return True
 
 
 simulator = Simulator(board=board)
 simulator.run()
+print(
+    "Exiting @ tick {} because {}.".format(
+        simulator.get_current_tick(), simulator.get_last_exit_event_cause()
+    )
+)
+
+print("Taking a checkpoint at", args.checkpoint_path)
+simulator.save_checkpoint(args.checkpoint_path)
+print("Done taking a checkpoint")
